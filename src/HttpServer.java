@@ -25,18 +25,8 @@ public class HttpServer {
             BufferedReader bufferedReader = new BufferedReader(
                     new InputStreamReader(clientSocket.getInputStream()));
 
-            String line;
 
-            // Read HTTP headers until reaching an empty line
-            while((line = bufferedReader.readLine()) != null) {
-                if (line.isEmpty()) {
-                    break;
-                }
-
-                System.out.println(line);
-            }
-
-            // TODO: Write the raw HTTP protocol and HTTP payload to send back to the client
+            HttpRequest httpRequest = new HttpRequest(bufferedReader);
 
             OutputStream outputStream = clientSocket.getOutputStream();
 
@@ -66,5 +56,4 @@ public class HttpServer {
     private static byte[] formatHeader(String headerString) {
         return (headerString +  "\r\n").getBytes();
     }
-
 }
