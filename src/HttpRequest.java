@@ -3,9 +3,7 @@ import java.io.IOException;
 
 public class HttpRequest {
 
-    enum HttpMethod {
-        GET, POST, UNKNOWN;
-    }
+    public HttpMethod method;
 
     public HttpRequest(BufferedReader bufferedReader) throws IOException {
         parseRequest(bufferedReader);
@@ -19,9 +17,9 @@ public class HttpRequest {
         // Parse actual request
         String[] request = line.split(" ");
 
-        String method = request[0];
+        method = HttpMethod.valueOf(request[0]);
 
-        // Read HTTP headers until reaching an empty line
+        // Read HTTP headers until reaching an empty line (end of headers)
         while((line = bufferedReader.readLine()) != null) {
             if (line.isEmpty()) {
                 break;
@@ -29,5 +27,17 @@ public class HttpRequest {
 
             System.out.println(line);
         }
+
+        // Check for payload -- check by length instead
+//        if (bufferedReader.readLine() != null) {
+//            // payload
+//            System.out.println("Payload present! ----");
+//        }
+
+    }
+
+    // Getter for http client request method
+    public HttpMethod getMethod() {
+        return method;
     }
 }
