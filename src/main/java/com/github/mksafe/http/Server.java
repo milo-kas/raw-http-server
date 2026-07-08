@@ -1,16 +1,18 @@
+package com.github.mksafe.http;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class HttpServer {
+public class Server {
 
     private int port = 8080;
 
-    public HttpServer() {}
+    public Server() {}
 
-    public HttpServer(int port) {
+    public Server(int port) {
         this.port = port;
     }
 
@@ -18,22 +20,21 @@ public class HttpServer {
         ServerSocket serverSocket = new ServerSocket(port);
 
         // creater handler
-        HttpHandler httpHandler = new HttpHandler();
+        Handler httpHandler = new Handler();
 
         for (int i = 0; true; i++) {
             Socket clientSocket = serverSocket.accept();
 
-            System.out.println("--- received request #" + i); // - #1 (next req) is for favicon.ico
+            System.out.println("--- waiting for request #" + i); // - #1 (next req) is for favicon.ico
             // Read and Translate incoming raw HTTP request from the browser to text
             BufferedReader bufferedReader = new BufferedReader(
                     new InputStreamReader(clientSocket.getInputStream()));
 
-
-            HttpRequest request = new HttpRequest(bufferedReader);
+            Request request = new Request(bufferedReader);
 
             OutputStream outputStream = clientSocket.getOutputStream();
 
-            HttpResponse response = new HttpResponse(outputStream);
+            Response response = new Response(outputStream);
 
             httpHandler.handleResponse(request, response);
 

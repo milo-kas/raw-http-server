@@ -1,11 +1,13 @@
+package com.github.mksafe.http;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 
-public class HttpRequest {
+public class Request {
 
-    public HttpMethod method;
+    public Method method;
 
-    public HttpRequest(BufferedReader bufferedReader) throws IOException {
+    public Request(BufferedReader bufferedReader) throws IOException {
         parseRequest(bufferedReader);
     }
 
@@ -17,7 +19,7 @@ public class HttpRequest {
         // Parse actual request
         String[] request = line.split(" ");
 
-        method = HttpMethod.valueOf(request[0]);
+        method = Method.valueOf(request[0]);
 
         // Read HTTP headers until reaching an empty line (end of headers)
         while((line = bufferedReader.readLine()) != null) {
@@ -37,7 +39,7 @@ public class HttpRequest {
     }
 
     // Getter for http client request method
-    public HttpMethod getMethod() {
+    public Method getMethod() {
         return method;
     }
 }

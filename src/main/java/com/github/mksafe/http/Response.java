@@ -1,13 +1,13 @@
-import java.io.BufferedReader;
+package com.github.mksafe.http;
+
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.ServerSocket;
 
-public class HttpResponse {
+public class Response {
 
     private final OutputStream outputStream;
 
-    HttpResponse(OutputStream outputStream) {
+    Response(OutputStream outputStream) {
         this.outputStream = outputStream;
     }
 
@@ -27,6 +27,7 @@ public class HttpResponse {
         // Send headers
         outputStream.flush();
 
+        // TODO: Reading from file
         // Stream payload
         outputStream.write("<h1>HELLO WORLD!</h1> <h2>testing</h2>".getBytes());
         outputStream.flush();
