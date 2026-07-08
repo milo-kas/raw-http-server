@@ -5,7 +5,8 @@ import java.io.IOException;
 
 public class Request {
 
-    public Method method;
+    private Method method;
+    private String path;
 
     public Request(BufferedReader bufferedReader) throws IOException {
         parseRequest(bufferedReader);
@@ -20,6 +21,7 @@ public class Request {
         String[] request = line.split(" ");
 
         method = Method.valueOf(request[0]);
+        path = request[1];
 
         // Read HTTP headers until reaching an empty line (end of headers)
         while((line = bufferedReader.readLine()) != null) {
@@ -41,5 +43,10 @@ public class Request {
     // Getter for http client request method
     public Method getMethod() {
         return method;
+    }
+
+    // Getter for file path
+    public String getPath() {
+        return path;
     }
 }

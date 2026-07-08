@@ -6,9 +6,11 @@ import java.io.OutputStream;
 public class Response {
 
     private final int status;
+    private final byte[] payload;
 
-    Response(int status) {
+    Response(int status, byte[] payload) {
         this.status = status;
+        this.payload = payload;
     }
 
     // Send actual response
@@ -31,7 +33,9 @@ public class Response {
 
 
         // Stream payload
-        outputStream.write("<h1>HELLO WORLD!</h1> <h2>testing</h2>".getBytes());
+//        outputStream.write("<h1>HELLO WORLD!</h1> <h2>testing</h2>".getBytes());
+
+        outputStream.write(payload);
         outputStream.flush();
     }
 

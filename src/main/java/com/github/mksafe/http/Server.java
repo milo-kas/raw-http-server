@@ -8,19 +8,30 @@ import java.net.Socket;
 
 public class Server {
 
-    private int port = 8080;
+    private int port;
+    private String resourceDir;
 
-    public Server() {}
+    public Server() {
+        this(8080, "public");
+    }
 
     public Server(int port) {
+        this(port, "public");
+    }
+    public Server(String resourcePath) {
+        this(8080, resourcePath);
+    }
+
+    public Server(int port, String resourcePath) {
         this.port = port;
+        this.resourceDir = resourcePath;
     }
 
     public void start() throws Exception {
         ServerSocket serverSocket = new ServerSocket(port);
 
         // creater handler
-        Handler handler = new Handler();
+        Handler handler = new Handler(resourceDir);
 
         for (int i = 0; true; i++) {
             Socket clientSocket = serverSocket.accept();
