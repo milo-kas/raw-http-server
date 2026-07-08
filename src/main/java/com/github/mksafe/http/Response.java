@@ -5,21 +5,23 @@ import java.io.OutputStream;
 
 public class Response {
 
-    private final OutputStream outputStream;
+    private final int status;
 
-    Response(OutputStream outputStream) {
-        this.outputStream = outputStream;
+    Response(int status) {
+        this.status = status;
     }
 
     // Send actual response
-    public void respond() throws IOException {
+    public void respond(OutputStream outputStream) throws IOException {
+        // TODO: Support custom responses
+
         // status
         // content type
         // CRLF
         // payload
 
         // Stream back a successful response (status code 200 - 299)
-        outputStream.write(formatHeader("HTTP/1.1 200 OK"));
+        outputStream.write(formatHeader("HTTP/1.1 " + status + " OK"));
         // Stream content type
         outputStream.write(formatHeader("Content-Type: text/html"));
         // Stream empty line to signal the end of headers
@@ -27,7 +29,7 @@ public class Response {
         // Send headers
         outputStream.flush();
 
-        // TODO: Reading from file
+
         // Stream payload
         outputStream.write("<h1>HELLO WORLD!</h1> <h2>testing</h2>".getBytes());
         outputStream.flush();

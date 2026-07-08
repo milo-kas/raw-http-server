@@ -4,12 +4,13 @@ import java.io.IOException;
 
 public class Handler {
 
-    public void handleResponse(Request request, Response response) throws IOException {
+    public Response handleRequest(Request request) throws IOException {
         // TODO: path, payload; POST, UNKNOWN, different status
-        switch (request.getMethod()) {
-            case GET -> response.respond();
-            case POST -> System.out.println("TODO");
-            case UNKNOWN -> System.out.println("UNKNOWN"); // send 501 status code
-        }
+        // TODO: Complete implementation of responses like 501 status response
+        return switch (request.getMethod()) {
+            case GET -> new Response(200);
+            case POST -> new Response(201); // placeholder
+            case UNKNOWN -> new Response(501); // send 501 status code
+        };
     }
 }

@@ -20,7 +20,7 @@ public class Server {
         ServerSocket serverSocket = new ServerSocket(port);
 
         // creater handler
-        Handler httpHandler = new Handler();
+        Handler handler = new Handler();
 
         for (int i = 0; true; i++) {
             Socket clientSocket = serverSocket.accept();
@@ -34,9 +34,9 @@ public class Server {
 
             OutputStream outputStream = clientSocket.getOutputStream();
 
-            Response response = new Response(outputStream);
+            Response response = handler.handleRequest(request);
 
-            httpHandler.handleResponse(request, response);
+            response.respond(outputStream);
 
             clientSocket.close();
         }
