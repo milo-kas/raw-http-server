@@ -3,6 +3,9 @@ package com.github.mksafe.http;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+import java.net.URI;
+
+
 public class Request {
 
     private Method method;
@@ -21,7 +24,11 @@ public class Request {
         String[] request = line.split(" ");
 
         method = Method.valueOf(request[0]);
-        path = request[1];
+        String rawPath = request[1];
+
+        // Decode path
+        URI uri = URI.create(rawPath);
+        path = uri.getPath();
 
         // Read HTTP headers until reaching an empty line (end of headers)
         while((line = bufferedReader.readLine()) != null) {
