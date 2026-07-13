@@ -5,10 +5,10 @@ import java.io.OutputStream;
 
 public class Response {
 
-    private final int status;
+    private final Status status;
     private final byte[] payload;
 
-    Response(int status, byte[] payload) {
+    Response(Status status, byte[] payload) {
         this.status = status;
         this.payload = payload;
     }
@@ -23,7 +23,7 @@ public class Response {
         // payload
 
         // Stream back a successful response (status code 200 - 299)
-        outputStream.write(formatHeader("HTTP/1.1 " + status + " OK"));
+        outputStream.write(formatHeader("HTTP/1.1 " + status.getCode() + " "+ status.getMessage()));
         // Stream content type
         outputStream.write(formatHeader("Content-Type: text/html"));
         // Stream empty line to signal the end of headers

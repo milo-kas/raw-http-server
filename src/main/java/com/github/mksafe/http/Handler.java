@@ -18,8 +18,8 @@ public class Handler {
         // TODO: Complete implementation of responses like 501 status response
         return switch (request.getMethod()) {
             case GET -> handleGetMethod(request);
-            case POST -> new Response(201, "".getBytes()); // placeholder
-            case UNKNOWN -> new Response(501, "".getBytes()); // send 501 status code
+            case POST -> new Response(Status.CREATED, "".getBytes()); // placeholder
+            case UNKNOWN -> new Response(Status.UNKNOWN, "".getBytes()); // send 501 status code
         };
     }
 
@@ -42,23 +42,23 @@ public class Handler {
         // Check for path traversal; the path is empty or doesn't start with the resource directory
         if (path.getNameCount() == 0 || !path.getName(0).toString().equals(resourceDir)) {
             System.err.println("Path Traversal Detected!");
-            return new Response(404, "".getBytes()); // 404 for Obscurity
+            return new Response(Status.NOT_FOUND, "".getBytes()); // 404 for Obscurity
         }
 
         try (InputStream inputStream = Handler.class.getResourceAsStream(canonicalPath)) {
             // Check for null instead of waiting for NullPointerException
             if (inputStream == null) {
                 System.out.println("Can't find resource at " + fullPath);
-                return new Response(404, "".getBytes());
+                return new Response(Status.NOT_FOUND, "".getBytes());
             }
 
             byte[] payload = inputStream.readAllBytes();
-            return new Response(200, payload);
+            return new Response(Status.OK, payload);
 
         } catch (IOException e) {
             // Couldn't read resource
             System.err.println(e.getMessage());
-            return new Response(500, "".getBytes());
+            return new Response(Status.INTERNAL_SERVER_ERROR, "".getBytes());
         }
     }
 }
