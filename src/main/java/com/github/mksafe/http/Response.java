@@ -31,10 +31,7 @@ public class Response {
         // Send headers
         outputStream.flush();
 
-
         // Stream payload
-//        outputStream.write("<h1>HELLO WORLD!</h1> <h2>testing</h2>".getBytes());
-
         outputStream.write(payload);
         outputStream.flush();
     }
