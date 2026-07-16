@@ -28,6 +28,11 @@ public class Handler {
         // Resolve the absolute resource path and load the payload from the class path
         String fullPath = "/" + resourceDir + request.getPath();
 
+        // default to index.html
+        if (request.getPath().equals("/")) {
+            fullPath += "index.html";
+        }
+
         // Flatten any relative path into a canonical destination
         Path path = Paths.get(fullPath).normalize();
 
