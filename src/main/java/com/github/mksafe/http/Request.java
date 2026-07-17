@@ -24,7 +24,12 @@ public class Request {
         // Parse actual request
         String[] request = line.split(" ");
 
-        method = Method.valueOf(request[0]);
+        try {
+            method = Method.valueOf(request[0]);
+        } catch (IllegalArgumentException e) {
+            method = Method.UNKNOWN;
+        }
+
         String rawPath = request[1];
 
         // Decode path
