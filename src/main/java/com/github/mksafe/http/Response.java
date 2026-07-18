@@ -7,9 +7,11 @@ public class Response {
 
     private final Status status;
     private final byte[] payload;
+    private final String contentType;
 
-    Response(Status status, byte[] payload) {
+    Response(Status status, String contentType, byte[] payload) {
         this.status = status;
+        this.contentType = contentType;
         this.payload = payload;
     }
 
@@ -25,7 +27,8 @@ public class Response {
         // Stream back a successful response (status code 200 - 299)
         outputStream.write(formatHeader("HTTP/1.1 " + status.getCode() + " "+ status.getMessage()));
         // Stream content type
-        outputStream.write(formatHeader("Content-Type: text/html"));
+//        outputStream.write(formatHeader("Content-Type: text/html"));
+        outputStream.write(formatHeader("Content-Type: " + contentType));
         // Stream empty line to signal the end of headers
         outputStream.write(formatHeader(""));
         // Send headers
