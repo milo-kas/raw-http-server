@@ -29,6 +29,7 @@ public class Response {
         // Stream content type
 //        outputStream.write(formatHeader("Content-Type: text/html"));
         outputStream.write(formatHeader("Content-Type: " + contentType));
+        outputStream.write(formatHeader("Content-Length: " + payload.length));
         // Stream empty line to signal the end of headers
         outputStream.write(formatHeader(""));
         // Send headers
