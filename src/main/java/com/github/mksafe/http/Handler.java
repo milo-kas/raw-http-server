@@ -15,6 +15,7 @@ public class Handler {
 
     public Response handleRequest(Request request) {
         // TODO: path, payload; POST, UNKNOWN, different status
+        // TODO: Add HEAD method
         // TODO: Complete implementation of responses like 501 status response
         return switch (request.getMethod()) {
             case GET -> handleGetMethod(request);
@@ -86,6 +87,7 @@ public class Handler {
                 case "css"         -> "text/css";
                 case "png"         -> "image/png";
                 case "jpg", "jpeg" -> "image/jpeg";
+                case "ico"         -> "image/x-icon";
                 default -> "application/octet-stream";
             };
         }
