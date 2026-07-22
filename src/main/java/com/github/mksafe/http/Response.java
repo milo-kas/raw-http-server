@@ -35,6 +35,11 @@ public class Response {
         // Stream date
         outputStream.write(formatHeader("Date: " + getDate()));
 
+        // Security headers
+        outputStream.write(formatHeader("X-Content-Type-Options: nosniff"));
+        outputStream.write(formatHeader("X-Frame-Options: DENY"));
+
+
         // Stream empty line to signal the end of headers
         outputStream.write(formatHeader(""));
 
