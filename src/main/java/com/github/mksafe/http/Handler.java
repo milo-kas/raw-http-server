@@ -15,12 +15,11 @@ public class Handler {
 
     public Response handleRequest(Request request) {
         // TODO: path, payload; POST, UNKNOWN, different status
-        // TODO: Add HEAD method
         // TODO: Complete implementation of responses like 501 status response
         return switch (request.getMethod()) {
-            case GET -> handleGetMethod(request);
-            case POST -> new Response(Status.CREATED, "text/plain", "".getBytes()); // placeholder
-            case UNKNOWN -> new Response(Status.UNKNOWN, "text/plain", "".getBytes()); // send 501 status code
+            case GET, HEAD -> handleGetMethod(request);
+            case POST -> new Response(Status.CREATED, "text/plain", "".getBytes(), request.getMethod()); // placeholder
+            case UNKNOWN -> new Response(Status.UNKNOWN, "text/plain", "".getBytes(), request.getMethod()); // send 501 status code
         };
     }
 
@@ -51,23 +50,23 @@ public class Handler {
         // Check for path traversal; the path is empty or doesn't start with the resource directory
         if (path.getNameCount() == 0 || !path.getName(0).toString().equals(resourceDir)) {
             System.err.println("Path Traversal Detected!");
-            return new Response(Status.NOT_FOUND, "text/plain", "".getBytes()); // 404 for Obscurity
+            return new Response(Status.NOT_FOUND, "text/plain", "".getBytes(), request.getMethod()); // 404 for Obscurity
         }
 
         try (InputStream inputStream = Handler.class.getResourceAsStream(canonicalPath)) {
             // Check for null instead of waiting for NullPointerException
             if (inputStream == null) {
                 System.out.println("Can't find resource at " + fullPath);
-                return new Response(Status.NOT_FOUND, "text/plain", "".getBytes());
+                return new Response(Status.NOT_FOUND, "text/plain", "".getBytes(), request.getMethod());
             }
 
             byte[] payload = inputStream.readAllBytes();
-            return new Response(Status.OK, contentType, payload);
+            return new Response(Status.OK, contentType, payload, request.getMethod());
 
         } catch (IOException e) {
             // Couldn't read resource
             System.err.println(e.getMessage());
-            return new Response(Status.INTERNAL_SERVER_ERROR, "text/plain", "".getBytes());
+            return new Response(Status.INTERNAL_SERVER_ERROR, "text/plain", "".getBytes(), request.getMethod());
         }
     }
 

@@ -8,11 +8,13 @@ public class Response {
     private final Status status;
     private final byte[] payload;
     private final String contentType;
+    private final Method method;
 
-    Response(Status status, String contentType, byte[] payload) {
+    Response(Status status, String contentType, byte[] payload, Method method) {
         this.status = status;
         this.contentType = contentType;
         this.payload = payload;
+        this.method = method;
     }
 
     // Send actual response
@@ -35,9 +37,11 @@ public class Response {
         // Send headers
         outputStream.flush();
 
-        // Stream payload
-        outputStream.write(payload);
-        outputStream.flush();
+        // Stream payload if requested
+        if (method.equals(Method.GET)) {
+            outputStream.write(payload);
+            outputStream.flush();
+        }
     }
 
     // CRLF helper

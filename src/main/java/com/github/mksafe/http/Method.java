@@ -1,7 +1,7 @@
 package com.github.mksafe.http;
 
 public enum Method {
-    GET, POST, UNKNOWN;
+    GET, HEAD, POST, UNKNOWN;
 
     Method setMethod(String method) {
         try {

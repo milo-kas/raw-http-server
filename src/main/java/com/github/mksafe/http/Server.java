@@ -30,7 +30,7 @@ public class Server {
     public void start() throws Exception {
         ServerSocket serverSocket = new ServerSocket(port);
 
-        // creater handler
+        // Create handler outside loop
         Handler handler = new Handler(resourceDir);
 
         for (int i = 0; true; i++) {
