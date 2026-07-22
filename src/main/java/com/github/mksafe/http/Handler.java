@@ -70,7 +70,6 @@ public class Handler {
         }
     }
 
-
     // Content type helper
     private String parseContentType(String canonicalPath) {
         // Get index of last '.' and '/' of the path
@@ -79,18 +78,11 @@ public class Handler {
 
         // If the dot is truly in the filename and not a dir, then parse its extension
         if (lastDot > lastSlash) {
-            String extension = canonicalPath.substring(lastDot + 1).toLowerCase();
+            String extension = canonicalPath.substring(lastDot + 1);
 
-            return switch (extension) {
-                case "html", "htm" -> "text/html";
-                case "css"         -> "text/css";
-                case "png"         -> "image/png";
-                case "jpg", "jpeg" -> "image/jpeg";
-                case "ico"         -> "image/x-icon";
-                default -> "application/octet-stream";
-            };
+            return ContentType.fromExtension(extension).getContentType();
         }
 
-        return "application/octet-stream";
+        return ContentType.OCTET_STREAM.getContentType();
     }
 }
