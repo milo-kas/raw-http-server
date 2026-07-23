@@ -29,7 +29,7 @@ public class Handler {
         String fullPath = "/" + resourceDir + request.getPath();
 
         // default to index.html
-        if (request.getPath().equals("/")) {
+        if (fullPath.endsWith("/")) {
             fullPath += "index.html";
         }
 

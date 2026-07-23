@@ -36,7 +36,8 @@ public class Server {
         for (int i = 0; true; i++) {
             Socket clientSocket = serverSocket.accept();
 
-            System.out.println("--- waiting for request #" + i); // - #1 (next req) is for favicon.ico
+            System.out.println("--- waiting for request #" + i);
+
             // Read and Translate incoming raw HTTP request from the browser to text
             BufferedReader bufferedReader = new BufferedReader(
                     new InputStreamReader(clientSocket.getInputStream()));
