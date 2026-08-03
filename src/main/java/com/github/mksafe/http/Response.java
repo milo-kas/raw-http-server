@@ -43,8 +43,8 @@ public class Response {
         // Stream empty line to signal the end of headers
         outputStream.write(formatHeader(""));
 
-        // Stream payload if requested
-        if (method.equals(Method.GET)) {
+        // Stream payload if method isn't HEAD
+        if (!method.equals(Method.HEAD)) {
             outputStream.write(payload);
         }
 

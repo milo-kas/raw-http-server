@@ -15,7 +15,6 @@ public class Handler {
 
     public Response handleRequest(Request request) {
         // TODO: path, payload; POST, UNKNOWN, different status
-        // TODO: Complete implementation of responses like 501 status response
         return switch (request.getMethod()) {
             case GET, HEAD -> handleGetMethod(request);
             case POST -> new Response(Status.CREATED, "text/plain", "".getBytes(), request.getMethod()); // placeholder
