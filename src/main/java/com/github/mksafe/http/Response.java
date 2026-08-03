@@ -1,5 +1,7 @@
 package com.github.mksafe.http;
 
+import com.sun.net.httpserver.Headers;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -65,4 +67,17 @@ public class Response {
         ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("GMT"));
         return RFC_9110_HTTP_DATE.format(zonedDateTime);
     }
+
+    // Getters
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public byte[] getPayload() {
+        // Return null, otherwise return a copy of the array
+        return payload == null ? null : payload.clone();
+    }
+
+
 }
