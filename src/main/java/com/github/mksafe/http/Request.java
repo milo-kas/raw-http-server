@@ -8,15 +8,20 @@ import java.net.URI;
 
 public class Request {
 
-    private Method method;
-    private String path;
-    private String payload;
+    private final Method method;
+    private final String path;
+    private final String payload;
 
-    public Request(BufferedReader bufferedReader) throws IOException {
-        parseRequest(bufferedReader);
+    public Request(Method method, String path, String payload) {
+        this.method = method;
+        this.path = path;
+        this.payload = payload;
     }
 
-    private void parseRequest(BufferedReader bufferedReader) throws IOException {
+    public static Request parseRequest(BufferedReader bufferedReader) throws IOException {
+        Method parsedMethod;
+        String parsedPath;
+        String parsedPayload = null;
 
         // Get the actual request (first line)
         String line = bufferedReader.readLine();
@@ -25,16 +30,16 @@ public class Request {
         String[] request = line.split(" ");
 
         try {
-            method = Method.valueOf(request[0]);
+            parsedMethod = Method.valueOf(request[0]);
         } catch (IllegalArgumentException e) {
-            method = Method.UNKNOWN;
+            parsedMethod = Method.UNKNOWN;
         }
 
         String rawPath = request[1];
 
         // Decode path
         URI uri = URI.create(rawPath);
-        path = uri.getPath();
+        parsedPath = uri.getPath();
 
         int contentLength = 0;
 
@@ -58,10 +63,12 @@ public class Request {
             int charsRead = bufferedReader.read(bodyChars, 0, bodyChars.length);
 
             if (charsRead > 0) {
-                payload = new String(bodyChars, 0, charsRead);
+                parsedPayload = new String(bodyChars, 0, charsRead);
                 System.out.println("Payload present!");
             }
         }
+
+        return new Request(parsedMethod, parsedPath, parsedPayload);
     }
 
     // Getter for http client request method

@@ -42,7 +42,7 @@ public class Server {
             BufferedReader bufferedReader = new BufferedReader(
                     new InputStreamReader(clientSocket.getInputStream()));
 
-            Request request = new Request(bufferedReader);
+            Request request = Request.parseRequest(bufferedReader);
 
             OutputStream outputStream = clientSocket.getOutputStream();
 
