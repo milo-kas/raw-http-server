@@ -46,7 +46,7 @@ public class Server {
 
             // Wrap in virtual thread submission
             executor.submit(() -> {
-                try {
+                try (clientSocket) {
                     System.out.println("--- waiting for request #" + requestNum);
 
                     // Read and Translate incoming raw HTTP request from the browser to text
@@ -54,14 +54,11 @@ public class Server {
                             new InputStreamReader(clientSocket.getInputStream()));
 
                     Request request = Request.parseRequest(bufferedReader);
-
                     OutputStream outputStream = clientSocket.getOutputStream();
 
                     Response response = handler.handleRequest(request);
-
                     response.respond(outputStream);
 
-                    clientSocket.close();
                 } catch (Exception e) {
                     System.err.println("Error handling request: " + e.getMessage());
                 }
