@@ -5,6 +5,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
 
@@ -33,24 +35,37 @@ public class Server {
         // Create handler outside loop
         Handler handler = new Handler(resourceDir);
 
+        // Project Loom
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
         for (int i = 0; true; i++) {
             Socket clientSocket = serverSocket.accept();
 
-            System.out.println("--- waiting for request #" + i);
+            // Local variables in executor lambda must be effectively final
+            final int requestNum = i;
 
-            // Read and Translate incoming raw HTTP request from the browser to text
-            BufferedReader bufferedReader = new BufferedReader(
-                    new InputStreamReader(clientSocket.getInputStream()));
+            // Wrap in virtual thread submission
+            executor.submit(() -> {
+                try {
+                    System.out.println("--- waiting for request #" + requestNum);
 
-            Request request = Request.parseRequest(bufferedReader);
+                    // Read and Translate incoming raw HTTP request from the browser to text
+                    BufferedReader bufferedReader = new BufferedReader(
+                            new InputStreamReader(clientSocket.getInputStream()));
 
-            OutputStream outputStream = clientSocket.getOutputStream();
+                    Request request = Request.parseRequest(bufferedReader);
 
-            Response response = handler.handleRequest(request);
+                    OutputStream outputStream = clientSocket.getOutputStream();
 
-            response.respond(outputStream);
+                    Response response = handler.handleRequest(request);
 
-            clientSocket.close();
+                    response.respond(outputStream);
+
+                    clientSocket.close();
+                } catch (Exception e) {
+                    System.err.println("Error handling request: " + e.getMessage());
+                }
+            });
         }
     }
 }
