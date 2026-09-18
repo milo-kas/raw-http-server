@@ -45,24 +45,26 @@ public class Server {
             final int requestNum = i;
 
             // Wrap in virtual thread submission
-            executor.submit(() -> {
-                try (clientSocket) {
-                    System.out.println("--- waiting for request #" + requestNum);
+            executor.submit(() -> handleClient(clientSocket, requestNum, handler));
+        }
+    }
 
-                    // Read and Translate incoming raw HTTP request from the browser to text
-                    BufferedReader bufferedReader = new BufferedReader(
-                            new InputStreamReader(clientSocket.getInputStream()));
+    private void handleClient(Socket clientSocket, int requestNum, Handler handler) {
+        try (clientSocket) {
+            System.out.println("--- waiting for request #" + requestNum);
 
-                    Request request = Request.parseRequest(bufferedReader);
-                    OutputStream outputStream = clientSocket.getOutputStream();
+            // Read and Translate incoming raw HTTP request from the browser to text
+            BufferedReader bufferedReader = new BufferedReader(
+                    new InputStreamReader(clientSocket.getInputStream()));
 
-                    Response response = handler.handleRequest(request);
-                    response.respond(outputStream);
+            Request request = Request.parseRequest(bufferedReader);
+            OutputStream outputStream = clientSocket.getOutputStream();
 
-                } catch (Exception e) {
-                    System.err.println("Error handling request: " + e.getMessage());
-                }
-            });
+            Response response = handler.handleRequest(request);
+            response.respond(outputStream);
+
+        } catch (Exception e) {
+            System.err.println("Error handling request: " + e.getMessage());
         }
     }
 }
