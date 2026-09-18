@@ -23,11 +23,18 @@ public class Request {
         String parsedPath;
         String parsedPayload = null;
 
-        // Get the actual request (first line)
+        // Read the request line (first line)
         String line = bufferedReader.readLine();
+        // Abort if the connection drops early or sends an empty line
+        if (line == null || line.isBlank()) {
+            throw new IOException("Empty Request");
+        }
 
-        // Parse actual request
-        String[] request = line.split(" ");
+        // Tokenise on whitespace and ensure that the method and path exist
+        String[] request = line.split("\\s+");
+        if (request.length < 2) {
+            throw new IOException("Invalid Request Line: " + line);
+        }
 
         try {
             parsedMethod = Method.valueOf(request[0]);

@@ -10,8 +10,8 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
-    private int port;
-    private String resourceDir;
+    private final int port;
+    private final String resourceDir;
 
     public Server() {
         this(8080, "public");
