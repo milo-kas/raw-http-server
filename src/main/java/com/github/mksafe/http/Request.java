@@ -36,11 +36,7 @@ public class Request {
             throw new IOException("Invalid Request Line: " + line);
         }
 
-        try {
-            parsedMethod = Method.valueOf(request[0]);
-        } catch (IllegalArgumentException e) {
-            parsedMethod = Method.UNKNOWN;
-        }
+        parsedMethod = Method.fromString(request[0]);
 
         String rawPath = request[1];
 
