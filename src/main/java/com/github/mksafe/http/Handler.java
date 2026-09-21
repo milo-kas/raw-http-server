@@ -14,10 +14,9 @@ public class Handler {
     }
 
     public Response handleRequest(Request request) {
-        // TODO: path, payload; POST, UNKNOWN, different status
         return switch (request.getMethod()) {
             case GET, HEAD -> handleGetMethod(request);
-            case POST -> new Response(Status.CREATED, "text/plain", "".getBytes(), request.getMethod()); // placeholder
+            case POST -> handlePostMethod(request);
             case UNKNOWN -> createErrorResponse(Status.UNKNOWN, request.getMethod()); // send 501 status code
         };
     }
@@ -67,6 +66,27 @@ public class Handler {
             System.err.println(e.getMessage());
             return createErrorResponse(Status.NOT_FOUND, request.getMethod());
         }
+    }
+
+    private Response handlePostMethod(Request request) {
+        String path = request.getPath();
+
+        // Check for api echo test
+        if (path.equals("/api/echo")) {
+            String payload = request.getPayload();
+
+            // No payload provided => bad request
+            if (payload == null || payload.isBlank()) {
+                return new Response(Status.BAD_REQUEST, "text/plain", "Missing payload".getBytes(), request.getMethod());
+            }
+
+            // Echo back the payload
+            return new Response(Status.CREATED, "text/plain",  payload.getBytes(), request.getMethod());
+
+        }
+
+        // TODO: make this into createErrorResponse for POST method
+        return new Response(Status.NOT_FOUND, "text/plain", "Not found".getBytes(), request.getMethod());
     }
 
     private Response createErrorResponse(Status status, Method method) {
