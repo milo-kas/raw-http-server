@@ -1,7 +1,5 @@
 package com.github.mksafe.http;
 
-import com.sun.net.httpserver.Headers;
-
 import java.io.IOException;
 import java.io.OutputStream;
 
