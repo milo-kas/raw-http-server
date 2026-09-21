@@ -77,16 +77,25 @@ public class Handler {
 
             // No payload provided => bad request
             if (payload == null || payload.isBlank()) {
-                return new Response(Status.BAD_REQUEST, "text/plain", "Missing payload".getBytes(), request.getMethod());
+                return createErrorResponse(Status.BAD_REQUEST, request.getMethod(), request.getPath());
             }
 
             // Echo back the payload
             return new Response(Status.CREATED, "text/plain",  payload.getBytes(), request.getMethod());
-
         }
 
-        // TODO: make this into createErrorResponse for POST method
-        return new Response(Status.NOT_FOUND, "text/plain", "Not found".getBytes(), request.getMethod());
+        return createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
+    }
+
+    // Handle API paths
+    private Response createErrorResponse(Status status, Method method, String path) {
+        if (path != null && path.startsWith("/api/")) {
+            String json = "{\"error\": \"" + status.getMessage() + "\"}\n";
+            return new Response(status, "application/json", json.getBytes(), method);
+        }
+
+        // Not an API path
+        return createErrorResponse(status, method);
     }
 
     private Response createErrorResponse(Status status, Method method) {
