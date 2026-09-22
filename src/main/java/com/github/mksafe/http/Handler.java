@@ -8,16 +8,18 @@ import java.nio.file.Paths;
 public class Handler {
 
     private final String resourceDir;
+    private final ErrorHandler errorHandler;
 
     public Handler(String resourceDir) {
         this.resourceDir = resourceDir;
+        this.errorHandler = new ErrorHandler(resourceDir);
     }
 
     public Response handleRequest(Request request) {
         return switch (request.getMethod()) {
             case GET, HEAD -> handleGetMethod(request);
             case POST -> handlePostMethod(request);
-            case UNKNOWN -> createErrorResponse(Status.UNKNOWN, request.getMethod(), request.getPath()); // send 501 status code
+            case UNKNOWN -> errorHandler.createErrorResponse(Status.UNKNOWN, request.getMethod(), request.getPath()); // send 501 status code
         };
     }
 
@@ -48,14 +50,14 @@ public class Handler {
         // Check for path traversal; the path is empty or doesn't start with the resource directory
         if (path.getNameCount() == 0 || !path.getName(0).toString().equals(resourceDir)) {
             System.err.println("Path Traversal Detected!");
-            return createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath()); // 404 for Obscurity
+            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath()); // 404 for Obscurity
         }
 
         try (InputStream inputStream = Handler.class.getResourceAsStream(canonicalPath)) {
             // Check for null instead of waiting for NullPointerException
             if (inputStream == null) {
                 System.out.println("Can't find resource at " + fullPath);
-                return createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
+                return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
             }
 
             byte[] payload = inputStream.readAllBytes();
@@ -64,7 +66,7 @@ public class Handler {
         } catch (IOException e) {
             // Couldn't read resource
             System.err.println(e.getMessage());
-            return createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
+            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
         }
     }
 
@@ -77,44 +79,14 @@ public class Handler {
 
             // No payload provided => bad request
             if (payload == null || payload.isBlank()) {
-                return createErrorResponse(Status.BAD_REQUEST, request.getMethod(), request.getPath());
+                return errorHandler.createErrorResponse(Status.BAD_REQUEST, request.getMethod(), request.getPath());
             }
 
             // Echo back the payload
             return new Response(Status.CREATED, "text/plain",  payload.getBytes(), request.getMethod());
         }
 
-        return createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
-    }
-
-    // Handle API paths
-    private Response createErrorResponse(Status status, Method method, String path) {
-        if (path != null && path.startsWith("/api/")) {
-            String json = "{\"error\": \"" + status.getMessage() + "\"}\n";
-            return new Response(status, "application/json", json.getBytes(), method);
-        }
-
-        // Not an API path
-        return createErrorResponse(status, method);
-    }
-
-    private Response createErrorResponse(Status status, Method method) {
-        // Dynamic error pages based on status code
-        String errorPagePath = "/" + resourceDir + "/error/" + status.getCode() + ".html";
-
-        try (InputStream errorStream = Handler.class.getResourceAsStream(errorPagePath)) {
-            // Serve the custom HTML file if it exists
-            if (errorStream != null) {
-                byte[] payload = errorStream.readAllBytes();
-                return new Response(status, ContentType.HTML.getContentType(), payload, method);
-            }
-        } catch (IOException e) {
-            System.err.printf("Failed to read custom error page %s: %s%n", errorPagePath, e.getMessage());
-        }
-
-        // File wasn't found or couldn't be read, send a plain message
-        String message = status.getCode() + " " + status.getMessage();
-        return new Response(status, "text/plain", message.getBytes(), method);
+        return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
     }
 
     // Content type helper
