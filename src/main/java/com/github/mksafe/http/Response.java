@@ -27,7 +27,6 @@ public class Response {
         // Stream the response status line
         outputStream.write(formatHeader("HTTP/1.1 " + status.getCode() + " "+ status.getMessage()));
         // Stream content type
-//        outputStream.write(formatHeader("Content-Type: text/html"));
         outputStream.write(formatHeader("Content-Type: " + contentType));
         outputStream.write(formatHeader("Content-Length: " + payload.length));
         // Signal the end of the TCP connection after response
@@ -77,5 +76,7 @@ public class Response {
         return payload == null ? null : payload.clone();
     }
 
-
+    public String getContentType() {
+        return contentType;
+    }
 }
