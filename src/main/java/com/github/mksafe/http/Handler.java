@@ -17,7 +17,7 @@ public class Handler {
         return switch (request.getMethod()) {
             case GET, HEAD -> handleGetMethod(request);
             case POST -> handlePostMethod(request);
-            case UNKNOWN -> createErrorResponse(Status.UNKNOWN, request.getMethod()); // send 501 status code
+            case UNKNOWN -> createErrorResponse(Status.UNKNOWN, request.getMethod(), request.getPath()); // send 501 status code
         };
     }
 
@@ -48,14 +48,14 @@ public class Handler {
         // Check for path traversal; the path is empty or doesn't start with the resource directory
         if (path.getNameCount() == 0 || !path.getName(0).toString().equals(resourceDir)) {
             System.err.println("Path Traversal Detected!");
-            return createErrorResponse(Status.NOT_FOUND, request.getMethod()); // 404 for Obscurity
+            return createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath()); // 404 for Obscurity
         }
 
         try (InputStream inputStream = Handler.class.getResourceAsStream(canonicalPath)) {
             // Check for null instead of waiting for NullPointerException
             if (inputStream == null) {
                 System.out.println("Can't find resource at " + fullPath);
-                return createErrorResponse(Status.NOT_FOUND, request.getMethod());
+                return createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
             }
 
             byte[] payload = inputStream.readAllBytes();
@@ -64,7 +64,7 @@ public class Handler {
         } catch (IOException e) {
             // Couldn't read resource
             System.err.println(e.getMessage());
-            return createErrorResponse(Status.NOT_FOUND, request.getMethod());
+            return createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
         }
     }
 
