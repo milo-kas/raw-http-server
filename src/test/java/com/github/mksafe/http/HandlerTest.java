@@ -43,4 +43,40 @@ class HandlerTest {
 
         assertEquals(Status.NOT_FOUND, response.getStatus(), "Path traversal must be blocked with a 404");
     }
+
+    // API TESTS
+    @Test
+    void testHandlePost_ApiEcho_WithValidPayload_Returns201() {
+        Request validPost = new Request(Method.POST, "/api/echo", "Hello World");
+        Response response = handler.handleRequest(validPost);
+
+        assertEquals(Status.CREATED, response.getStatus(), "Should return 201 Created");
+
+        String responseBody = new String(response.getPayload());
+        assertEquals("Hello World", responseBody, "Should echo the payload exactly");
+    }
+
+    @Test
+    void testHandlePost_ApiEcho_WithBlankPayload_Returns400_AndJson() {
+        Request badPost = new Request(Method.POST, "/api/echo", "   ");
+        Response response = handler.handleRequest(badPost);
+
+        assertEquals(Status.BAD_REQUEST, response.getStatus(), "Should return 400 Bad Request");
+        assertEquals("application/json", response.getContentType(), "API errors must return JSON");
+
+        String responseBody = new String(response.getPayload());
+        assertEquals("{\"error\": \"Bad Request\"}\n", responseBody, "Should format error as JSON");
+    }
+
+    @Test
+    void testHandleGet_MissingApiRoute_Returns404_AndJson() {
+        Request missingApi = new Request(Method.GET, "/api/nonexistent", null);
+        Response response = handler.handleRequest(missingApi);
+
+        assertEquals(Status.NOT_FOUND, response.getStatus(), "Should return 404 Not Found");
+        assertEquals("application/json", response.getContentType(), "Missing API routes must return JSON");
+
+        String responseBody = new String(response.getPayload());
+        assertEquals("{\"error\": \"Not Found\"}\n", responseBody, "Should format error as JSON");
+    }
 }
