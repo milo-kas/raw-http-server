@@ -14,7 +14,7 @@ class HandlerTest {
     @BeforeEach
     void setUp() {
         // Runs before every single test to give a fresh Handler
-        handler = new Handler("public");
+        handler = new Handler("dummy-public");
     }
 
     @Test
