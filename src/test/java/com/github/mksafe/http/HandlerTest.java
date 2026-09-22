@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HandlerTest {
 
@@ -78,5 +79,39 @@ class HandlerTest {
 
         String responseBody = new String(response.getPayload());
         assertEquals("{\"error\": \"Not Found\"}\n", responseBody, "Should format error as JSON");
+    }
+
+    // Test happy paths for static files
+    @Test
+    void testHandleGet_ValidStaticFile_Returns200_AndHtml() {
+        Request validGet = new Request(Method.GET, "/index.html", null);
+        Response response = handler.handleRequest(validGet);
+
+        assertEquals(Status.OK, response.getStatus(), "Should return 200 OK");
+        assertEquals("text/html", response.getContentType(), "Should parse .html extension correctly");
+
+        String responseBody = new String(response.getPayload());
+        assertTrue(responseBody.contains("HELLO WORLD!"), "Should read the dummy index.html file content");
+    }
+
+    @Test
+    void testHandleGet_RootPath_DefaultsToIndexHtml() {
+        Request rootGet = new Request(Method.GET, "/", null);
+        Response response = handler.handleRequest(rootGet);
+
+        assertEquals(Status.OK, response.getStatus(), "Should return 200 OK for root path");
+        assertEquals("text/html", response.getContentType(), "Should resolve to dummy-public/index.html");
+    }
+
+    @Test
+    void testHandleGet_MissingWebRoute_LoadsHtmlErrorPage() {
+        Request missingWeb = new Request(Method.GET, "/does-not-exist.html", null);
+        Response response = handler.handleRequest(missingWeb);
+
+        assertEquals(Status.NOT_FOUND, response.getStatus(), "Should return 404 Not Found");
+        assertEquals("text/html", response.getContentType(), "Should load the custom dummy 404.html page");
+
+        String responseBody = new String(response.getPayload());
+        assertTrue(responseBody.contains("404 Error"), "Should contain the HTML from dummy-public/error/404.html");
     }
 }
