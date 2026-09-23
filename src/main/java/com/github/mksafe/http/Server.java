@@ -11,29 +11,35 @@ import java.util.concurrent.Executors;
 public class Server {
 
     private final int port;
-    private final String resourceDir;
+    private final Router router;
 
-    public Server() {
-        this(8080, "public");
+    public Server(Router router) {
+        this(8080, router);
+    }
+
+    public Server(int port, Router router) {
+        this.port = port;
+        this.router = router;
+    }
+
+    public Server(int port, String resourcePath) {
+        this(port, new Router(resourcePath));
+    }
+
+    public Server(String resourcePath) {
+        this(8080, resourcePath);
     }
 
     public Server(int port) {
         this(port, "public");
     }
-    public Server(String resourcePath) {
-        this(8080, resourcePath);
-    }
 
-    public Server(int port, String resourcePath) {
-        this.port = port;
-        this.resourceDir = resourcePath;
+    public Server() {
+        this(8080, "public");
     }
 
     public void start() throws Exception {
         ServerSocket serverSocket = new ServerSocket(port);
-
-        // Create handler outside loop
-        Handler handler = new Handler(resourceDir);
 
         // Project Loom
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -45,11 +51,11 @@ public class Server {
             final int requestNum = i;
 
             // Wrap in virtual thread submission
-            executor.submit(() -> handleClient(clientSocket, requestNum, handler));
+            executor.submit(() -> handleClient(clientSocket, requestNum, router));
         }
     }
 
-    private void handleClient(Socket clientSocket, int requestNum, Handler handler) {
+    private void handleClient(Socket clientSocket, int requestNum, Router router) {
         try (clientSocket) {
             System.out.println("--- waiting for request #" + requestNum);
 
@@ -60,7 +66,7 @@ public class Server {
             Request request = Request.parseRequest(bufferedReader);
             OutputStream outputStream = clientSocket.getOutputStream();
 
-            Response response = handler.handleRequest(request);
+            Response response = router.handleRequest(request);
             response.respond(outputStream);
 
         } catch (Exception e) {
