@@ -1,8 +1,8 @@
 package com.github.mksafe.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -11,24 +11,42 @@ import java.util.Locale;
 public class Response {
 
     private final Status status;
-    private final byte[] payload;
     private final String contentType;
+    private final long contentLength;
     private final Method method;
+    private final InputStream payload;
+    private byte[] cachedPayload;
 
-    Response(Status status, String contentType, byte[] payload, Method method) {
+    public Response(Status status, String contentType, InputStream payload, long contentLength, Method method) {
         this.status = status;
         this.contentType = contentType;
         this.payload = payload;
+        this.contentLength = contentLength;
+        this.method = method;
+    }
+
+    public Response(Status status, String contentType, InputStream payload, Method method) {
+        this(status, contentType, payload, -1, method);
+    }
+
+    public Response(Status status, String contentType, byte[] payload, Method method) {
+        this.status = status;
+        this.contentType = contentType;
+        this.cachedPayload = payload != null ? payload.clone() : null;
+        this.contentLength = payload != null ? payload.length : 0;
+        this.payload = null;
         this.method = method;
     }
 
     // Send actual response
     public void respond(OutputStream outputStream) throws IOException {
         // Stream the response status line
-        outputStream.write(formatHeader("HTTP/1.1 " + status.getCode() + " "+ status.getMessage()));
+        outputStream.write(formatHeader("HTTP/1.1 " + status.getCode() + " " + status.getMessage()));
         // Stream content type
         outputStream.write(formatHeader("Content-Type: " + contentType));
-        outputStream.write(formatHeader("Content-Length: " + payload.length));
+        if (contentLength >= 0) {
+            outputStream.write(formatHeader("Content-Length: " + contentLength));
+        }
         // Signal the end of the TCP connection after response
         outputStream.write(formatHeader("Connection: close"));
         // Stream date
@@ -38,13 +56,22 @@ public class Response {
         outputStream.write(formatHeader("X-Content-Type-Options: nosniff"));
         outputStream.write(formatHeader("X-Frame-Options: DENY"));
 
-
         // Stream empty line to signal the end of headers
         outputStream.write(formatHeader(""));
 
-        // Stream payload if method isn't HEAD
+        // Stream payload if requested and method is not HEAD
         if (!method.equals(Method.HEAD)) {
-            outputStream.write(payload);
+            if (cachedPayload != null) {
+                outputStream.write(cachedPayload);
+            } else if (payload != null) {
+                try (InputStream stream = payload) {
+                    stream.transferTo(outputStream);
+                }
+            }
+        } else if (payload != null) {
+            try (InputStream stream = payload) {
+                // Safely close the input stream
+            }
         }
 
         // Flush buffered bytes to be written to underlying socket
@@ -53,7 +80,7 @@ public class Response {
 
     // CRLF helper
     private static byte[] formatHeader(String headerString) {
-        return (headerString +  "\r\n").getBytes();
+        return (headerString + "\r\n").getBytes();
     }
 
     // Date helper with format as per RFC 9110
@@ -72,11 +99,33 @@ public class Response {
     }
 
     public byte[] getPayload() {
-        // Return null, otherwise return a copy of the array
-        return payload == null ? null : payload.clone();
+        if (cachedPayload != null) {
+            return cachedPayload.clone();
+        }
+        if (payload == null) {
+            return null;
+        }
+        try {
+            cachedPayload = payload.readAllBytes();
+            return cachedPayload.clone();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read payload", e);
+        }
+    }
+
+    public InputStream getPayloadStream() {
+        return payload;
+    }
+
+    public long getContentLength() {
+        return contentLength;
     }
 
     public String getContentType() {
         return contentType;
+    }
+
+    public Method getMethod() {
+        return method;
     }
 }

@@ -2,6 +2,8 @@ package com.github.mksafe.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -48,16 +50,17 @@ public class StaticHandler {
             return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath()); // 404 for Obscurity
         }
 
-        try (InputStream inputStream = StaticHandler.class.getResourceAsStream(canonicalPath)) {
-            // Check for null instead of waiting for NullPointerException
-            if (inputStream == null) {
-                System.out.println("Can't find resource at " + fullPath);
-                return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
-            }
+        URL resourceUrl = StaticHandler.class.getResource(canonicalPath);
+        if (resourceUrl == null) {
+            System.out.println("Can't find resource at " + fullPath);
+            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
+        }
 
-            byte[] payload = inputStream.readAllBytes();
-            return new Response(Status.OK, contentType, payload, request.getMethod());
-
+        try {
+            URLConnection connection = resourceUrl.openConnection();
+            long contentLength = connection.getContentLengthLong();
+            InputStream inputStream = connection.getInputStream();
+            return new Response(Status.OK, contentType, inputStream, contentLength, request.getMethod());
         } catch (IOException e) {
             // Couldn't read resource
             System.err.println(e.getMessage());

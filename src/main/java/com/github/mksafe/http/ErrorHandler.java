@@ -2,6 +2,8 @@ package com.github.mksafe.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 
 public class ErrorHandler {
 
@@ -25,14 +27,16 @@ public class ErrorHandler {
         // Dynamic error pages based on status code
         String errorPagePath = "/" + resourceDir + "/error/" + status.getCode() + ".html";
 
-        try (InputStream errorStream = ErrorHandler.class.getResourceAsStream(errorPagePath)) {
-            // Serve the custom HTML file if it exists
-            if (errorStream != null) {
-                byte[] payload = errorStream.readAllBytes();
-                return new Response(status, ContentType.HTML.getContentType(), payload, method);
+        URL errorUrl = ErrorHandler.class.getResource(errorPagePath);
+        if (errorUrl != null) {
+            try {
+                URLConnection connection = errorUrl.openConnection();
+                long contentLength = connection.getContentLengthLong();
+                InputStream inputStream = connection.getInputStream();
+                return new Response(status, ContentType.HTML.getContentType(), inputStream, contentLength, method);
+            } catch (IOException e) {
+                System.err.printf("Failed to read custom error page %s: %s%n", errorPagePath, e.getMessage());
             }
-        } catch (IOException e) {
-            System.err.printf("Failed to read custom error page %s: %s%n", errorPagePath, e.getMessage());
         }
 
         // File wasn't found or couldn't be read, send a plain message
