@@ -1,0 +1,16 @@
+# Auto-detect text files and normalize to LF
+* text=auto eol=lf
+
+# Explicitly preserve line endings for scripts
+*.sh text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Prevent binary corruption
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.pdf binary
