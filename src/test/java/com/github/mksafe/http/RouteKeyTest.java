@@ -32,7 +32,7 @@ class RouteKeyTest {
     void testMapLookup() throws Exception {
         Map<RouteKey, RouteHandler> routes = new HashMap<>();
 
-        RouteHandler handler = request -> new Response(Status.OK, "text/plain", "Hello".getBytes(), request.getMethod());
+        RouteHandler handler = request -> Response.text("Hello", request.getMethod());
         routes.put(new RouteKey(Method.GET, "/api/hello"), handler);
 
         RouteKey lookupKey = new RouteKey(Method.GET, "/api/hello");

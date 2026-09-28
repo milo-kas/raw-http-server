@@ -3,8 +3,6 @@ package com.github.mksafe.http;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,9 +17,9 @@ class RouterTest {
         router.post("/api/echo", request -> {
             String payload = request.getPayload();
             if (payload == null || payload.isBlank()) {
-                return new Response(Status.BAD_REQUEST, "application/json", "{\"error\": \"Bad Request\"}\n".getBytes(), request.getMethod());
+                return Response.json(Status.BAD_REQUEST, "{\"error\": \"Bad Request\"}\n", request.getMethod());
             }
-            return new Response(Status.CREATED, "text/plain", payload.getBytes(), request.getMethod());
+            return Response.text(Status.CREATED, payload, request.getMethod());
         });
     }
 
@@ -124,7 +122,7 @@ class RouterTest {
 
     @Test
     void testHandleGet_DynamicCustomRoute_ReturnsOk() {
-        router.get("/api/greet", req -> new Response(Status.OK, "text/plain", "Greetings!".getBytes(), req.getMethod()));
+        router.get("/api/greet", req -> Response.text("Greetings!", req.getMethod()));
 
         Request request = new Request(Method.GET, "/api/greet", null);
         Response response = router.handleRequest(request);
@@ -135,7 +133,7 @@ class RouterTest {
 
     @Test
     void testHandleRequest_PathNormalisation_MatchesRoutesWithoutLeadingSlash() {
-        router.get("custom/path", req -> new Response(Status.OK, "text/plain", "Matched".getBytes(), req.getMethod()));
+        router.get("custom/path", req -> Response.text("Matched", req.getMethod()));
 
         Request requestWithSlash = new Request(Method.GET, "/custom/path", null);
         Response response = router.handleRequest(requestWithSlash);
