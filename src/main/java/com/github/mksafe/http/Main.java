@@ -9,9 +9,9 @@ public class Main {
         router.post("/api/echo", request -> {
             String payload = request.getPayload();
             if (payload == null || payload.isBlank()) {
-                return new Response(Status.BAD_REQUEST, "application/json", "{\"error\": \"Bad Request\"}\n".getBytes(), request.getMethod());
+                return Response.json(Status.BAD_REQUEST, "{\"error\": \"Bad Request\"}\n", request.getMethod());
             }
-            return new Response(Status.CREATED, "text/plain", payload.getBytes(), request.getMethod());
+            return Response.text(Status.CREATED, payload, request.getMethod());
         });
 
         Server server = new Server(port, router);

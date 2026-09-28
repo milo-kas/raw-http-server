@@ -16,7 +16,7 @@ public class ErrorHandler {
     public Response createErrorResponse(Status status, Method method, String path) {
         if (path != null && path.startsWith("/api/")) {
             String json = "{\"error\": \"" + status.getMessage() + "\"}\n";
-            return new Response(status, "application/json", json.getBytes(), method);
+            return Response.json(status, json, method);
         }
 
         // Not an API path
@@ -41,6 +41,6 @@ public class ErrorHandler {
 
         // File wasn't found or couldn't be read, send a plain message
         String message = status.getCode() + " " + status.getMessage();
-        return new Response(status, "text/plain", message.getBytes(), method);
+        return Response.text(status, message, method);
     }
 }

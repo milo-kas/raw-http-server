@@ -7,8 +7,12 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.nio.charset.StandardCharsets;
 
 public class Response {
+
+    private static final DateTimeFormatter RFC_9110_HTTP_DATE = DateTimeFormatter
+            .ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.ENGLISH).withZone(ZoneId.of("GMT"));
 
     private final Status status;
     private final String contentType;
@@ -25,10 +29,6 @@ public class Response {
         this.method = method;
     }
 
-    public Response(Status status, String contentType, InputStream payload, Method method) {
-        this(status, contentType, payload, -1, method);
-    }
-
     public Response(Status status, String contentType, byte[] payload, Method method) {
         this.status = status;
         this.contentType = contentType;
@@ -36,6 +36,35 @@ public class Response {
         this.contentLength = payload != null ? payload.length : 0;
         this.payload = null;
         this.method = method;
+    }
+
+    // Static Factory Helpers
+
+    public static Response text(String text, Method method) {
+        return text(Status.OK, text, method);
+    }
+
+    public static Response text(Status status, String text, Method method) {
+        byte[] bytes = text != null ? text.getBytes(StandardCharsets.UTF_8) : null;
+        return new Response(status, ContentType.PLAIN.getContentType(), bytes, method);
+    }
+
+    public static Response json(String json, Method method) {
+        return json(Status.OK, json, method);
+    }
+
+    public static Response json(Status status, String json, Method method) {
+        byte[] bytes = json != null ? json.getBytes(StandardCharsets.UTF_8) : null;
+        return new Response(status, ContentType.JSON.getContentType(), bytes, method);
+    }
+
+    public static Response html(String html, Method method) {
+        return html(Status.OK, html, method);
+    }
+
+    public static Response html(Status status, String html, Method method) {
+        byte[] bytes = html != null ? html.getBytes(StandardCharsets.UTF_8) : null;
+        return new Response(status, ContentType.HTML.getContentType(), bytes, method);
     }
 
     // Send actual response
@@ -60,7 +89,7 @@ public class Response {
         outputStream.write(formatHeader(""));
 
         // Stream payload if requested and method is not HEAD
-        if (!method.equals(Method.HEAD)) {
+        if (!Method.HEAD.equals(method)) {
             if (cachedPayload != null) {
                 outputStream.write(cachedPayload);
             } else if (payload != null) {
@@ -69,9 +98,7 @@ public class Response {
                 }
             }
         } else if (payload != null) {
-            try (InputStream stream = payload) {
-                // Safely close the input stream
-            }
+            payload.close();
         }
 
         // Flush buffered bytes to be written to underlying socket
@@ -80,16 +107,12 @@ public class Response {
 
     // CRLF helper
     private static byte[] formatHeader(String headerString) {
-        return (headerString + "\r\n").getBytes();
+        return (headerString + "\r\n").getBytes(StandardCharsets.US_ASCII);
     }
 
     // Date helper with format as per RFC 9110
     private static String getDate() {
-        DateTimeFormatter RFC_9110_HTTP_DATE = DateTimeFormatter
-                .ofPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.ENGLISH).withZone(ZoneId.of("GMT"));
-
-        ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("GMT"));
-        return RFC_9110_HTTP_DATE.format(zonedDateTime);
+        return RFC_9110_HTTP_DATE.format(ZonedDateTime.now(ZoneId.of("GMT")));
     }
 
     // Getters

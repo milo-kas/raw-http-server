@@ -6,6 +6,8 @@ public enum ContentType {
     PNG("image/png"),
     JPEG("image/jpeg"),
     ICO("image/x-icon"),
+    JSON("application/json"),
+    PLAIN("text/plain"),
     OCTET_STREAM("application/octet-stream");
 
     private final String contentType;
@@ -26,6 +28,8 @@ public enum ContentType {
             case "png"         -> PNG;
             case "jpg", "jpeg" -> JPEG;
             case "ico"         -> ICO;
+            case "json"        -> JSON;
+            case "txt"         -> PLAIN;
             default -> OCTET_STREAM;
         };
     }
