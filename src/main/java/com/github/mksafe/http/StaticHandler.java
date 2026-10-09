@@ -23,7 +23,7 @@ public class StaticHandler {
 
     public Response handleStaticResource(Request request) {
         // Resolve the absolute resource path and load the payload from the class path
-        String fullPath = "/" + resourceDir + request.getPath();
+        String fullPath = "/" + resourceDir + request.path();
 
         // default to index.html
         if (fullPath.endsWith("/")) {
@@ -47,24 +47,24 @@ public class StaticHandler {
         // Check for path traversal; the path is empty or doesn't start with the resource directory
         if (path.getNameCount() == 0 || !path.getName(0).toString().equals(resourceDir)) {
             System.err.println("Path Traversal Detected!");
-            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath()); // 404 for Obscurity
+            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path()); // 404 for Obscurity
         }
 
         URL resourceUrl = StaticHandler.class.getResource(canonicalPath);
         if (resourceUrl == null) {
             System.out.println("Can't find resource at " + fullPath);
-            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
+            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path());
         }
 
         try {
             URLConnection connection = resourceUrl.openConnection();
             long contentLength = connection.getContentLengthLong();
             InputStream inputStream = connection.getInputStream();
-            return new Response(Status.OK, contentType, inputStream, contentLength, request.getMethod());
+            return new Response(Status.OK, contentType, inputStream, contentLength, request.method());
         } catch (IOException e) {
             // Couldn't read resource
             System.err.println(e.getMessage());
-            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.getMethod(), request.getPath());
+            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path());
         }
     }
 

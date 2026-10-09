@@ -6,17 +6,7 @@ import java.io.IOException;
 import java.net.URI;
 
 
-public class Request {
-
-    private final Method method;
-    private final String path;
-    private final String payload;
-
-    public Request(Method method, String path, String payload) {
-        this.method = method;
-        this.path = path;
-        this.payload = payload;
-    }
+public record Request(Method method, String path, String payload) {
 
     public static Request parseRequest(BufferedReader bufferedReader) throws IOException {
         Method parsedMethod;
@@ -47,7 +37,7 @@ public class Request {
         int contentLength = 0;
 
         // Read HTTP headers until reaching an empty line (end of headers)
-        while((line = bufferedReader.readLine()) != null) {
+        while ((line = bufferedReader.readLine()) != null) {
             if (line.isEmpty()) {
                 break;
             }
@@ -73,16 +63,4 @@ public class Request {
 
         return new Request(parsedMethod, parsedPath, parsedPayload);
     }
-
-    // Getter for http client request method
-    public Method getMethod() {
-        return method;
-    }
-
-    // Getter for file path
-    public String getPath() {
-        return path;
-    }
-
-    public String getPayload() { return payload; }
 }

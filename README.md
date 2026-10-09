@@ -13,6 +13,7 @@
 
 ## Quickstart
 Simply define the routes and start the server
+
 ```java
 import com.github.mksafe.http.Router;
 import com.github.mksafe.http.Server;
@@ -25,8 +26,8 @@ public class Main {
         Router router = new Router("public");
 
         // Register functional endpoints
-        router.get("/api/health", req -> Response.json(Status.OK, "{\"status\":\"UP\"}", req.getMethod()));
-        router.post("/api/echo", req -> Response.text(Status.CREATED, req.getPayload(), req.getMethod()));
+        router.get("/api/health", req -> Response.json(Status.OK, "{\"status\":\"UP\"}", req.method()));
+        router.post("/api/echo", req -> Response.text(Status.CREATED, req.payload(), req.method()));
 
         // Start listening
         Server server = new Server(8080, router);

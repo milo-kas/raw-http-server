@@ -15,11 +15,11 @@ class RouterTest {
         // Runs before every single test to give a fresh Router with test routes
         router = new Router("dummy-public");
         router.post("/api/echo", request -> {
-            String payload = request.getPayload();
+            String payload = request.payload();
             if (payload == null || payload.isBlank()) {
-                return Response.json(Status.BAD_REQUEST, "{\"error\": \"Bad Request\"}\n", request.getMethod());
+                return Response.json(Status.BAD_REQUEST, "{\"error\": \"Bad Request\"}\n", request.method());
             }
-            return Response.text(Status.CREATED, payload, request.getMethod());
+            return Response.text(Status.CREATED, payload, request.method());
         });
     }
 
@@ -122,7 +122,7 @@ class RouterTest {
 
     @Test
     void testHandleGet_DynamicCustomRoute_ReturnsOk() {
-        router.get("/api/greet", req -> Response.text("Greetings!", req.getMethod()));
+        router.get("/api/greet", req -> Response.text("Greetings!", req.method()));
 
         Request request = new Request(Method.GET, "/api/greet", null);
         Response response = router.handleRequest(request);
@@ -133,7 +133,7 @@ class RouterTest {
 
     @Test
     void testHandleRequest_PathNormalisation_MatchesRoutesWithoutLeadingSlash() {
-        router.get("custom/path", req -> Response.text("Matched", req.getMethod()));
+        router.get("custom/path", req -> Response.text("Matched", req.method()));
 
         Request requestWithSlash = new Request(Method.GET, "/custom/path", null);
         Response response = router.handleRequest(requestWithSlash);

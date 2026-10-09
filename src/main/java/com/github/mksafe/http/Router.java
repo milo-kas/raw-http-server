@@ -36,13 +36,13 @@ public class Router {
     }
 
     public Response handleRequest(Request request) {
-        Method method = request.getMethod();
+        Method method = request.method();
 
         if (method == Method.UNKNOWN) {
-            return errorHandler.createErrorResponse(Status.UNKNOWN, method, request.getPath());
+            return errorHandler.createErrorResponse(Status.UNKNOWN, method, request.path());
         }
 
-        RouteKey routeKey = new RouteKey(method, normalisePath(request.getPath()));
+        RouteKey routeKey = new RouteKey(method, normalisePath(request.path()));
         RouteHandler handler = routes.get(routeKey);
 
         if (handler != null) {
@@ -50,7 +50,7 @@ public class Router {
                 return handler.handle(request);
             } catch (Exception e) {
                 System.err.println("Error executing route handler: " + e.getMessage());
-                return errorHandler.createErrorResponse(Status.INTERNAL_SERVER_ERROR, method, request.getPath());
+                return errorHandler.createErrorResponse(Status.INTERNAL_SERVER_ERROR, method, request.path());
             }
         }
 
@@ -58,7 +58,7 @@ public class Router {
             return staticHandler.handleStaticResource(request);
         }
 
-        return errorHandler.createErrorResponse(Status.NOT_FOUND, method, request.getPath());
+        return errorHandler.createErrorResponse(Status.NOT_FOUND, method, request.path());
     }
 
     private String normalisePath(String path) {

@@ -7,11 +7,11 @@ public class Main {
 
         Router router = new Router(resourceDir);
         router.post("/api/echo", request -> {
-            String payload = request.getPayload();
+            String payload = request.payload();
             if (payload == null || payload.isBlank()) {
-                return Response.json(Status.BAD_REQUEST, "{\"error\": \"Bad Request\"}\n", request.getMethod());
+                return Response.json(Status.BAD_REQUEST, "{\"error\": \"Bad Request\"}\n", request.method());
             }
-            return Response.text(Status.CREATED, payload, request.getMethod());
+            return Response.text(Status.CREATED, payload, request.method());
         });
 
         Server server = new Server(port, router);
