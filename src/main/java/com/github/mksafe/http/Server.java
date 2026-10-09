@@ -1,12 +1,14 @@
 package com.github.mksafe.http;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server {
 
@@ -38,20 +40,19 @@ public class Server {
         this(8080, "public");
     }
 
-    public void start() throws Exception {
-        ServerSocket serverSocket = new ServerSocket(port);
+    public void start() throws IOException {
 
-        // Project Loom
-        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            ServerSocket serverSocket = new ServerSocket(port);
 
-        for (int i = 0; true; i++) {
-            Socket clientSocket = serverSocket.accept();
+            int requestNum = 0;
 
-            // Local variables in executor lambda must be effectively final
-            final int requestNum = i;
+            while (!serverSocket.isClosed()) {
+                Socket clientSocket = serverSocket.accept();
 
-            // Wrap in virtual thread submission
-            executor.submit(() -> handleClient(clientSocket, requestNum, router));
+                final int requestId = ++requestNum;
+                executor.submit(() -> handleClient(clientSocket, requestId, router));
+            }
         }
     }
 
