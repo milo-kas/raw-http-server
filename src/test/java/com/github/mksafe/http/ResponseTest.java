@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ResponseTest {
 
     @Test
-    void testRespond_WithInputStreamPayload_StreamsContentToOutputStream() throws IOException {
+    void respond_WithInputStreamPayload_StreamsContentToOutputStream() throws IOException {
         byte[] data = "Streaming payload data".getBytes(StandardCharsets.UTF_8);
         InputStream inputStream = new ByteArrayInputStream(data);
 
@@ -39,7 +39,7 @@ class ResponseTest {
     }
 
     @Test
-    void testRespond_WithHeadMethod_DoesNotWritePayloadBody() throws IOException {
+    void respond_WithHeadMethod_DoesNotWritePayloadBody() throws IOException {
         byte[] data = "Secret body that should not be transmitted".getBytes(StandardCharsets.UTF_8);
         InputStream inputStream = new ByteArrayInputStream(data);
 
@@ -57,7 +57,7 @@ class ResponseTest {
     }
 
     @Test
-    void testRespond_WithHeadMethod_ClosesUnderlyingStream() throws IOException {
+    void respond_WithHeadMethod_ClosesUnderlyingStream() throws IOException {
         AtomicBoolean closed = new AtomicBoolean(false);
         InputStream trackedStream = new InputStream() {
             private final InputStream delegate = new ByteArrayInputStream("data".getBytes(StandardCharsets.UTF_8));
@@ -82,7 +82,7 @@ class ResponseTest {
     }
 
     @Test
-    void testRespond_WithByteArrayConstructor_StreamsCorrectly() throws IOException {
+    void respond_WithByteArrayConstructor_StreamsCorrectly() throws IOException {
         byte[] data = "{\"message\":\"hello\"}".getBytes(StandardCharsets.UTF_8);
         Response response = new Response(Status.OK, "application/json", data, Method.GET);
 
@@ -97,7 +97,7 @@ class ResponseTest {
     }
 
     @Test
-    void testRespond_WithByteArray_HeadMethod_SuppressesBody() throws IOException {
+    void respond_WithByteArray_HeadMethod_SuppressesBody() throws IOException {
         byte[] data = "{\"message\":\"hello\"}".getBytes(StandardCharsets.UTF_8);
         Response response = new Response(Status.OK, "application/json", data, Method.HEAD);
 
@@ -113,7 +113,7 @@ class ResponseTest {
     }
 
     @Test
-    void testGetPayload_WithInputStream_CanBeReadMultipleTimes() {
+    void getPayload_WithInputStream_CanBeReadMultipleTimes() {
         byte[] data = "Repeated read test".getBytes(StandardCharsets.UTF_8);
         Response response = new Response(Status.OK, "text/plain", new ByteArrayInputStream(data), data.length, Method.GET);
 
@@ -127,7 +127,7 @@ class ResponseTest {
     }
 
     @Test
-    void testGetPayload_WhenPayloadIsNull_ReturnsNull() {
+    void getPayload_WhenPayloadIsNull_ReturnsNull() {
         Response response = new Response(Status.OK, "text/plain", null, 0, Method.GET);
         assertNull(response.getPayload());
 
@@ -136,7 +136,7 @@ class ResponseTest {
     }
 
     @Test
-    void testGetters() {
+    void getters() {
         byte[] data = "Test".getBytes(StandardCharsets.UTF_8);
         InputStream stream = new ByteArrayInputStream(data);
         Response response = new Response(Status.CREATED, "text/plain", stream, data.length, Method.POST);
@@ -149,7 +149,7 @@ class ResponseTest {
     }
 
     @Test
-    void testRespond_WhenPayloadIsNull_WritesHeadersOnly() throws IOException {
+    void respond_WhenPayloadIsNull_WritesHeadersOnly() throws IOException {
         Response response = new Response(Status.OK, "text/plain", null, 0, Method.GET);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -161,7 +161,7 @@ class ResponseTest {
     }
 
     @Test
-    void testRespond_WithNegativeContentLength_OmitsContentLengthHeader() throws IOException {
+    void respond_WithNegativeContentLength_OmitsContentLengthHeader() throws IOException {
         Response response = new Response(Status.OK, "text/plain", new ByteArrayInputStream("data".getBytes(StandardCharsets.UTF_8)), -1, Method.GET);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -172,7 +172,7 @@ class ResponseTest {
     }
 
     @Test
-    void testRespond_AfterCallingGetPayload_StreamsCachedPayload() throws IOException {
+    void respond_AfterCallingGetPayload_StreamsCachedPayload() throws IOException {
         byte[] data = "Cached payload streaming".getBytes(StandardCharsets.UTF_8);
         Response response = new Response(Status.OK, "text/plain", new ByteArrayInputStream(data), data.length, Method.GET);
 
@@ -187,7 +187,7 @@ class ResponseTest {
     }
 
     @Test
-    void testText_FactoryHelpers() throws IOException {
+    void text_FactoryHelpers() throws IOException {
         Response r1 = Response.text("Sample text", Method.GET);
         assertEquals(Status.OK, r1.getStatus());
         assertEquals("text/plain", r1.getContentType());
@@ -214,7 +214,7 @@ class ResponseTest {
     }
 
     @Test
-    void testJson_FactoryHelpers() throws IOException {
+    void json_FactoryHelpers() throws IOException {
         Response r1 = Response.json("{\"message\":\"success\"}", Method.GET);
         assertEquals(Status.OK, r1.getStatus());
         assertEquals("application/json", r1.getContentType());
@@ -238,7 +238,7 @@ class ResponseTest {
     }
 
     @Test
-    void testHtml_FactoryHelpers() throws IOException {
+    void html_FactoryHelpers() throws IOException {
         Response r1 = Response.html("<h1>Title</h1>", Method.GET);
         assertEquals(Status.OK, r1.getStatus());
         assertEquals("text/html", r1.getContentType());
@@ -262,7 +262,7 @@ class ResponseTest {
     }
 
     @Test
-    void testUtf8_CharsetEncodingForPayload() {
+    void utf8_CharsetEncodingForPayload() {
         String utf8Content = "Hello, 世界 🌍! Übergröße";
         Response response = Response.text(utf8Content, Method.GET);
         byte[] expectedBytes = utf8Content.getBytes(StandardCharsets.UTF_8);
@@ -272,7 +272,7 @@ class ResponseTest {
     }
 
     @Test
-    void testNullPayload_FactoryHelpers() {
+    void nullPayload_FactoryHelpers() {
         Response r1 = Response.text(null, Method.GET);
         assertEquals(0, r1.getContentLength());
         assertNull(r1.getPayload());
@@ -287,7 +287,7 @@ class ResponseTest {
     }
 
     @Test
-    void testContentType_JsonAndPlain() {
+    void contentType_JsonAndPlain() {
         assertEquals("application/json", ContentType.JSON.getContentType());
         assertEquals("text/plain", ContentType.PLAIN.getContentType());
         assertEquals(ContentType.JSON, ContentType.fromExtension("json"));

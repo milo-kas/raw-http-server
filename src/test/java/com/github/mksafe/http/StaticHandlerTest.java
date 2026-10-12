@@ -17,7 +17,7 @@ class StaticHandlerTest {
     }
 
     @Test
-    void testHandleStaticResource_ValidHtmlFile_Returns200AndHtmlContentType() {
+    void handleStaticResource_ValidHtmlFile_Returns200AndHtmlContentType() {
         Request request = new Request(Method.GET, "/index.html", null);
         Response response = staticHandler.handleStaticResource(request);
 
@@ -28,7 +28,7 @@ class StaticHandlerTest {
     }
 
     @Test
-    void testHandleStaticResource_RootPath_ResolvesToIndexHtml() {
+    void handleStaticResource_RootPath_ResolvesToIndexHtml() {
         Request request = new Request(Method.GET, "/", null);
         Response response = staticHandler.handleStaticResource(request);
 
@@ -38,7 +38,7 @@ class StaticHandlerTest {
     }
 
     @Test
-    void testHandleStaticResource_BinaryFile_ReturnsCorrectContentType() {
+    void handleStaticResource_BinaryFile_ReturnsCorrectContentType() {
         Request request = new Request(Method.GET, "/favicon.ico", null);
         Response response = staticHandler.handleStaticResource(request);
 
@@ -48,7 +48,7 @@ class StaticHandlerTest {
     }
 
     @Test
-    void testHandleStaticResource_HeadMethod_Returns200WithContentType() {
+    void handleStaticResource_HeadMethod_Returns200WithContentType() {
         Request request = new Request(Method.HEAD, "/index.html", null);
         Response response = staticHandler.handleStaticResource(request);
 
@@ -57,7 +57,7 @@ class StaticHandlerTest {
     }
 
     @Test
-    void testHandleStaticResource_PathTraversal_Returns404() {
+    void handleStaticResource_PathTraversal_Returns404() {
         Request request = new Request(Method.GET, "/../secret.txt", null);
         Response response = staticHandler.handleStaticResource(request);
 
@@ -65,7 +65,7 @@ class StaticHandlerTest {
     }
 
     @Test
-    void testHandleStaticResource_NonExistentFile_Returns404WithCustomErrorHtml() {
+    void handleStaticResource_NonExistentFile_Returns404WithCustomErrorHtml() {
         Request request = new Request(Method.GET, "/non-existent-page.html", null);
         Response response = staticHandler.handleStaticResource(request);
 

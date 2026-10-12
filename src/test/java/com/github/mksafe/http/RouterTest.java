@@ -24,7 +24,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleRequest_WhenFileDoesNotExist_Returns404() {
+    void handleRequest_WhenFileDoesNotExist_Returns404() {
         // Create a GET request for a bad path
         Request badPath = new Request(Method.GET, "/bad-path", null);
         Response response = router.handleRequest(badPath);
@@ -33,7 +33,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleRequest_WhenMethodIsUnknown_Returns501() {
+    void handleRequest_WhenMethodIsUnknown_Returns501() {
         // Create a request with an unsupported HTTP method
         Request fakeRequest = new Request(Method.UNKNOWN, "/index.html", null);
         Response response = router.handleRequest(fakeRequest);
@@ -42,7 +42,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleRequest_WhenPathTraversalAttempted_Returns404() {
+    void handleRequest_WhenPathTraversalAttempted_Returns404() {
         // Try to traverse above the public root
         Request fakeRequest = new Request(Method.GET, "/../secret-passwords.txt", null);
         Response response = router.handleRequest(fakeRequest);
@@ -52,7 +52,7 @@ class RouterTest {
 
     // API TESTS
     @Test
-    void testHandlePost_ApiEcho_WithValidPayload_Returns201() {
+    void handlePost_ApiEcho_WithValidPayload_Returns201() {
         Request validPost = new Request(Method.POST, "/api/echo", "Hello World");
         Response response = router.handleRequest(validPost);
 
@@ -63,7 +63,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandlePost_ApiEcho_WithBlankPayload_Returns400_AndJson() {
+    void handlePost_ApiEcho_WithBlankPayload_Returns400_AndJson() {
         Request badPost = new Request(Method.POST, "/api/echo", "   ");
         Response response = router.handleRequest(badPost);
 
@@ -75,7 +75,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleGet_MissingApiRoute_Returns404_AndJson() {
+    void handleGet_MissingApiRoute_Returns404_AndJson() {
         Request missingApi = new Request(Method.GET, "/api/nonexistent", null);
         Response response = router.handleRequest(missingApi);
 
@@ -88,7 +88,7 @@ class RouterTest {
 
     // Test happy paths for static files
     @Test
-    void testHandleGet_ValidStaticFile_Returns200_AndHtml() {
+    void handleGet_ValidStaticFile_Returns200_AndHtml() {
         Request validGet = new Request(Method.GET, "/index.html", null);
         Response response = router.handleRequest(validGet);
 
@@ -100,7 +100,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleGet_RootPath_DefaultsToIndexHtml() {
+    void handleGet_RootPath_DefaultsToIndexHtml() {
         Request rootGet = new Request(Method.GET, "/", null);
         Response response = router.handleRequest(rootGet);
 
@@ -109,7 +109,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleGet_MissingWebRoute_LoadsHtmlErrorPage() {
+    void handleGet_MissingWebRoute_LoadsHtmlErrorPage() {
         Request missingWeb = new Request(Method.GET, "/does-not-exist.html", null);
         Response response = router.handleRequest(missingWeb);
 
@@ -121,7 +121,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleGet_DynamicCustomRoute_ReturnsOk() {
+    void handleGet_DynamicCustomRoute_ReturnsOk() {
         router.get("/api/greet", req -> Response.text("Greetings!", req.method()));
 
         Request request = new Request(Method.GET, "/api/greet", null);
@@ -132,7 +132,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleRequest_PathNormalisation_MatchesRoutesWithoutLeadingSlash() {
+    void handleRequest_PathNormalisation_MatchesRoutesWithoutLeadingSlash() {
         router.get("custom/path", req -> Response.text("Matched", req.method()));
 
         Request requestWithSlash = new Request(Method.GET, "/custom/path", null);
@@ -143,7 +143,7 @@ class RouterTest {
     }
 
     @Test
-    void testHandleRequest_HandlerThrowsException_Returns500() {
+    void handleRequest_HandlerThrowsException_Returns500() {
         router.get("/api/failing", req -> {
             throw new RuntimeException("Simulated crash");
         });

@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class RouteKeyTest {
 
     @Test
-    void testEqualityAndHashCode() {
+    void equalityAndHashCode() {
         RouteKey key1 = new RouteKey(Method.GET, "/api/echo");
         RouteKey key2 = new RouteKey(Method.GET, "/api/echo");
         RouteKey keyDifferentMethod = new RouteKey(Method.POST, "/api/echo");
@@ -29,7 +29,7 @@ class RouteKeyTest {
     }
 
     @Test
-    void testMapLookup() throws Exception {
+    void mapLookup() throws Exception {
         Map<RouteKey, RouteHandler> routes = new HashMap<>();
 
         RouteHandler handler = request -> Response.text("Hello", request.method());
@@ -49,7 +49,7 @@ class RouteKeyTest {
     }
 
     @Test
-    void testGetters() {
+    void getters() {
         RouteKey key = new RouteKey(Method.POST, "/api/items");
         assertEquals(Method.POST, key.method());
         assertEquals("/api/items", key.path());

@@ -16,7 +16,7 @@ class ErrorHandlerTest {
     }
 
     @Test
-    void testCreateErrorResponse_WithPathStartingWithApi_ReturnsJson() {
+    void createErrorResponse_WithPathStartingWithApi_ReturnsJson() {
         Response response = errorHandler.createErrorResponse(Status.NOT_FOUND, Method.GET, "/api/users");
 
         assertEquals(Status.NOT_FOUND, response.getStatus());
@@ -25,7 +25,7 @@ class ErrorHandlerTest {
     }
 
     @Test
-    void testCreateErrorResponse_WithApiBadRequest_ReturnsJson() {
+    void createErrorResponse_WithApiBadRequest_ReturnsJson() {
         Response response = errorHandler.createErrorResponse(Status.BAD_REQUEST, Method.POST, "/api/echo");
 
         assertEquals(Status.BAD_REQUEST, response.getStatus());
@@ -34,7 +34,7 @@ class ErrorHandlerTest {
     }
 
     @Test
-    void testCreateErrorResponse_WithCustomHtmlTemplate_ReturnsHtml() {
+    void createErrorResponse_WithCustomHtmlTemplate_ReturnsHtml() {
         Response response = errorHandler.createErrorResponse(Status.NOT_FOUND, Method.GET, "/not-found.html");
 
         assertEquals(Status.NOT_FOUND, response.getStatus());
@@ -43,7 +43,7 @@ class ErrorHandlerTest {
     }
 
     @Test
-    void testCreateErrorResponse_WithoutPath_LoadsHtmlIfAvailable() {
+    void createErrorResponse_WithoutPath_LoadsHtmlIfAvailable() {
         Response response = errorHandler.createErrorResponse(Status.UNKNOWN, Method.UNKNOWN);
 
         assertEquals(Status.UNKNOWN, response.getStatus());
@@ -52,7 +52,7 @@ class ErrorHandlerTest {
     }
 
     @Test
-    void testCreateErrorResponse_WhenHtmlNotPresent_FallsBackToPlainText() {
+    void createErrorResponse_WhenHtmlNotPresent_FallsBackToPlainText() {
         Response response = errorHandler.createErrorResponse(Status.BAD_REQUEST, Method.GET);
 
         assertEquals(Status.BAD_REQUEST, response.getStatus());
