@@ -67,6 +67,11 @@ public class Response {
         return new Response(status, ContentType.HTML.getContentType(), bytes, method);
     }
 
+    public static Response error(Status status, String message, Method method) {
+        String jsonBody = new ApiError(message).toJson();
+        return Response.json(status, jsonBody, method);
+    }
+
     // Send actual response
     public void respond(OutputStream outputStream) throws IOException {
         // Stream the response status line

@@ -9,7 +9,7 @@ public class Main {
         router.post("/api/echo", request -> {
             String payload = request.payload();
             if (payload == null || payload.isBlank()) {
-                return Response.json(Status.BAD_REQUEST, "{\"error\": \"Bad Request\"}\n", request.method());
+                return Response.json(Status.BAD_REQUEST, "Bad Request", request.method());
             }
             return Response.text(Status.CREATED, payload, request.method());
         });
