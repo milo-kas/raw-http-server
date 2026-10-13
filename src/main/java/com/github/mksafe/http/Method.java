@@ -4,10 +4,13 @@ public enum Method {
     GET, HEAD, POST, UNKNOWN;
 
     public static Method fromString(String method) {
-        try {
-            return Method.valueOf(method.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            return UNKNOWN;
-        }
+        if (method == null) return UNKNOWN;
+
+        return switch (method.toUpperCase()) {
+            case "GET" -> GET;
+            case "HEAD" -> HEAD;
+            case "POST" -> POST;
+            default -> UNKNOWN;
+        };
     }
 }
