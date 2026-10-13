@@ -21,7 +21,16 @@ class ErrorHandlerTest {
 
         assertEquals(Status.NOT_FOUND, response.getStatus());
         assertEquals("application/json", response.getContentType());
-        assertEquals("{\"error\": \"Not Found\"}\n", new String(response.getPayload()));
+        assertEquals("{\"error\": \"Not Found\"}", new String(response.getPayload()));
+    }
+
+    @Test
+    void createErrorResponse_WithExactApiPath_ReturnsJson() {
+        Response response = errorHandler.createErrorResponse(Status.NOT_FOUND, Method.GET, "/api");
+
+        assertEquals(Status.NOT_FOUND, response.getStatus());
+        assertEquals("application/json", response.getContentType());
+        assertEquals("{\"error\": \"Not Found\"}", new String(response.getPayload()));
     }
 
     @Test
@@ -30,7 +39,7 @@ class ErrorHandlerTest {
 
         assertEquals(Status.BAD_REQUEST, response.getStatus());
         assertEquals("application/json", response.getContentType());
-        assertEquals("{\"error\": \"Bad Request\"}\n", new String(response.getPayload()));
+        assertEquals("{\"error\": \"Bad Request\"}", new String(response.getPayload()));
     }
 
     @Test

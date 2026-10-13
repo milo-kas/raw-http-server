@@ -83,7 +83,7 @@ class RouterTest {
         assertEquals("application/json", response.getContentType(), "Missing API routes must return JSON");
 
         String responseBody = new String(response.getPayload());
-        assertEquals("{\"error\": \"Not Found\"}\n", responseBody, "Should format error as JSON");
+        assertEquals("{\"error\": \"Not Found\"}", responseBody, "Should format error as JSON");
     }
 
     // Test happy paths for static files

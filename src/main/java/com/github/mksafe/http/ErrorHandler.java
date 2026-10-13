@@ -14,9 +14,8 @@ public class ErrorHandler {
     }
 
     public Response createErrorResponse(Status status, Method method, String path) {
-        if (path != null && path.startsWith("/api/")) {
-            String json = "{\"error\": \"" + status.getMessage() + "\"}\n";
-            return Response.json(status, json, method);
+        if (path != null && (path.equals("/api") || path.startsWith("/api/"))) {
+            return Response.error(status, status.getMessage(), method);
         }
 
         // Not an API path
