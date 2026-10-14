@@ -6,6 +6,14 @@ public class Main {
         String resourceDir = "public";
 
         Router router = new Router(resourceDir);
+        router.get("/api/users", req -> {
+            String page = req.queryParam("page");
+            String limit = req.queryParam("limit");
+
+            String responseBody = "{\"page\":" + (page != null ? page : "1") + "}";
+            return Response.json(Status.OK, responseBody, req.method());
+        });
+
         router.post("/api/echo", request -> {
             String payload = request.payload();
             if (payload == null || payload.isBlank()) {
