@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 
 public class StaticHandler {
 
+    private static final System.Logger log = System.getLogger(StaticHandler.class.getName());
+
     private final String resourceDir;
     private final ErrorHandler errorHandler;
 
@@ -39,20 +41,18 @@ public class StaticHandler {
         // Account for windows dir formatting
         canonicalPath = canonicalPath.replace('\\', '/');
 
-        System.out.println("Final path: " + canonicalPath);
-
         // Get the content type
         String contentType = parseContentType(canonicalPath);
 
         // Check for path traversal; the path is empty or doesn't start with the resource directory
         if (path.getNameCount() == 0 || !path.getName(0).toString().equals(resourceDir)) {
-            System.err.println("Path Traversal Detected!");
+            log.log(System.Logger.Level.WARNING, "Path traversal attempt: {0}", request.path());
             return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path()); // 404 for Obscurity
         }
 
         URL resourceUrl = StaticHandler.class.getResource(canonicalPath);
         if (resourceUrl == null) {
-            System.out.println("Can't find resource at " + fullPath);
+            log.log(System.Logger.Level.DEBUG, "Resource not found: {0}", canonicalPath);
             return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path());
         }
 
@@ -63,7 +63,7 @@ public class StaticHandler {
             return new Response(Status.OK, contentType, inputStream, contentLength, request.method());
         } catch (IOException e) {
             // Couldn't read resource
-            System.err.println(e.getMessage());
+            log.log(System.Logger.Level.ERROR, "Failed to read resource " + canonicalPath, e);
             return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path());
         }
     }

@@ -6,6 +6,8 @@ import java.util.Map;
 
 public class Router {
 
+    private static final System.Logger log = System.getLogger(Router.class.getName());
+
     private final Map<RouteKey, RouteHandler> routes = new HashMap<>();
     private final ErrorHandler errorHandler;
     private final StaticHandler staticHandler;
@@ -49,7 +51,8 @@ public class Router {
             try {
                 return handler.handle(request);
             } catch (Exception e) {
-                System.err.println("Error executing route handler: " + e.getMessage());
+                log.log(System.Logger.Level.ERROR,
+                        "Error executing route handler for " + request.method() + " " + request.path(), e);
                 return errorHandler.createErrorResponse(Status.INTERNAL_SERVER_ERROR, method, request.path());
             }
         }

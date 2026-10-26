@@ -7,6 +7,8 @@ import java.net.URLConnection;
 
 public class ErrorHandler {
 
+    private static final System.Logger log = System.getLogger(ErrorHandler.class.getName());
+
     private final String resourceDir;
 
     public ErrorHandler(String resourceDir) {
@@ -34,7 +36,7 @@ public class ErrorHandler {
                 InputStream inputStream = connection.getInputStream();
                 return new Response(status, ContentType.HTML.getContentType(), inputStream, contentLength, method);
             } catch (IOException e) {
-                System.err.printf("Failed to read custom error page %s: %s%n", errorPagePath, e.getMessage());
+                log.log(System.Logger.Level.WARNING, "Failed to read custom error page " + errorPagePath, e);
             }
         }
 

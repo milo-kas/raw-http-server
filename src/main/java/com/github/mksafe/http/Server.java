@@ -8,9 +8,10 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server {
+
+    private static final System.Logger log = System.getLogger(Server.class.getName());
 
     private final int port;
     private final Router router;
@@ -44,6 +45,7 @@ public class Server {
 
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             ServerSocket serverSocket = new ServerSocket(port);
+            log.log(System.Logger.Level.INFO, "Listening on port " + port);
 
             int requestNum = 0;
 
@@ -58,20 +60,25 @@ public class Server {
 
     private void handleClient(Socket clientSocket, int requestNum, Router router) {
         try (clientSocket) {
-            System.out.println("--- waiting for request #" + requestNum);
+            log.log(System.Logger.Level.DEBUG,
+                    "Connection #" + requestNum + " from " + clientSocket.getRemoteSocketAddress());
 
             // Read and Translate incoming raw HTTP request from the browser to text
             BufferedReader bufferedReader = new BufferedReader(
                     new InputStreamReader(clientSocket.getInputStream()));
 
             Request request = Request.parseRequest(bufferedReader);
+
+            log.log(System.Logger.Level.INFO,
+                    "Connection #" + requestNum + ": " + request.method() + " " + request.path());
+
             OutputStream outputStream = clientSocket.getOutputStream();
 
             Response response = router.handleRequest(request);
             response.respond(outputStream);
 
         } catch (Exception e) {
-            System.err.println("Error handling request: " + e.getMessage());
+            log.log(System.Logger.Level.ERROR, "Error handling request #" + requestNum, e);
         }
     }
 }

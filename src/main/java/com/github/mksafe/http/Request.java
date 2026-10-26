@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public record Request(Method method, String path, String query, String payload) {
 
     public Request(Method method, String path, String payload) {
@@ -60,8 +59,6 @@ public record Request(Method method, String path, String query, String payload) 
             if (line.toLowerCase().startsWith("content-length:")) {
                 contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
             }
-
-            System.out.println(line);
         }
 
         // Check for payload - read contentLength chars
@@ -71,7 +68,6 @@ public record Request(Method method, String path, String query, String payload) 
 
             if (charsRead > 0) {
                 parsedPayload = new String(bodyChars, 0, charsRead);
-                System.out.println("Payload present!");
             }
         }
 
