@@ -2,6 +2,7 @@ package com.github.mksafe.http;
 
 import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,6 +23,20 @@ class RequestTest {
         assertEquals("2", req.queryParam("page"));
         assertEquals("c#", req.queryParam("tag"));
         assertArrayEquals("data".getBytes(StandardCharsets.ISO_8859_1), req.payload());
+    }
+
+    @Test
+    void parseRequest_PreservesBinaryPayload() throws IOException {
+        byte[] body = {0x00, (byte) 0xFF, (byte) 0xE4, (byte) 0xBD, (byte) 0xA0, 0x0A, (byte) 0x80};
+
+        ByteArrayOutputStream raw = new ByteArrayOutputStream();
+        raw.write(("POST /upload HTTP/1.1\r\nContent-Length: " + body.length + "\r\n\r\n")
+                .getBytes(StandardCharsets.US_ASCII));
+        raw.write(body);
+
+        Request req = parse(raw.toByteArray());
+
+        assertArrayEquals(body, req.payload());
     }
 
     @Test
@@ -58,8 +73,35 @@ class RequestTest {
         assertThrows(IOException.class, () -> parse("BAD\r\n\r\n"));
     }
 
+    @Test
+    void parseRequest_ThrowsWhenPayloadShorterThanContentLength() {
+        String raw = "POST /upload HTTP/1.1\r\nContent-Length: 10\r\n\r\nshort";
+
+        IOException error = assertThrows(IOException.class, () -> parse(raw));
+        assertTrue(error.getMessage().contains("Unexpected end of payload"));
+    }
+
+    @Test
+    void parseRequest_EnforcesMaximumLineLengthBoundary() throws IOException {
+        String prefix = "X-Long: ";
+        int maxLineSize = 8 * 1024;
+
+        // 8192 bytes before LF (including the trailing CR) is accepted
+        String accepted = "GET / HTTP/1.1\r\n"
+                + prefix + "a".repeat(maxLineSize - prefix.length() - 1) + "\r\n\r\n";
+        assertEquals(maxLineSize - prefix.length() - 1, parse(accepted).header("x-long").length());
+
+        // 8193 bytes before LF is rejected
+        String rejected = "GET / HTTP/1.1\r\n"
+                + prefix + "a".repeat(maxLineSize - prefix.length()) + "\r\n\r\n";
+        assertThrows(IOException.class, () -> parse(rejected));
+    }
+
     private static Request parse(String raw) throws IOException {
-        return Request.parseRequest(
-                new ByteArrayInputStream(raw.getBytes(StandardCharsets.ISO_8859_1)));
+        return parse(raw.getBytes(StandardCharsets.ISO_8859_1));
+    }
+
+    private static Request parse(byte[] raw) throws IOException {
+        return Request.parseRequest(new ByteArrayInputStream(raw));
     }
 }
