@@ -10,14 +10,24 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public record Request(Method method, String path, String query, String payload) {
+public record Request(
+    Method method, String path, String query, Map<String, String> headers, String payload) {
+
+    // For every construction, make header immutable
+    public Request {
+        headers = headers == null ? Map.of() : Map.copyOf(headers);
+    }
+
+    public Request(Method method, String path, String query, String payload) {
+        this(method, path, query, Map.of(), payload);
+    }
 
     public Request(Method method, String path, String payload) {
-        this(method, path, null, payload);
+        this(method, path, null, Map.of(), payload);
     }
 
     public Request(Method method, String path) {
-        this(method, path, null, null);
+        this(method, path, null, Map.of(), null);
     }
 
     public static Request parseRequest(BufferedReader bufferedReader) throws IOException {
@@ -47,21 +57,45 @@ public record Request(Method method, String path, String query, String payload) 
         parsedPath = uri.getPath();
         String parsedQuery = uri.getRawQuery();
 
-        int contentLength = 0;
+        Map<String, String> parsedHeaders = new HashMap<>();
 
         // Read HTTP headers until reaching an empty line (end of headers)
         while ((line = bufferedReader.readLine()) != null) {
-            if (line.isEmpty()) {
-                break;
+            if (line.isEmpty()) break;
+
+            int colon = line.indexOf(':');
+            if (colon <= 0) {
+                throw new IOException("Invalid header line: " + line);
             }
 
-            // check for content length
-            if (line.toLowerCase().startsWith("content-length:")) {
-                contentLength = Integer.parseInt(line.substring("content-length:".length()).trim());
+            String headerName = line.substring(0, colon).trim();
+            String headerValue = line.substring(colon + 1).trim();
+
+            if (headerName.isEmpty()) {
+                throw new IOException("Invalid header line: " + line);
+            }
+            if (headerName.equalsIgnoreCase("content-length")
+                && headerValue(parsedHeaders, headerName) != null) {
+                throw new IOException("Duplicate Content-Length");
+            }
+
+            parsedHeaders.put(headerName, headerValue);
+        }
+
+        String contentLengthValue = headerValue(parsedHeaders, "content-length");
+        int contentLength = 0;
+        if (contentLengthValue != null) {
+            try {
+                contentLength = Integer.parseInt(contentLengthValue);
+            } catch (NumberFormatException e) {
+                throw new IOException("Invalid Content-Length: " + contentLengthValue, e);
+            }
+            if (contentLength < 0) {
+                throw new IOException("Negative Content-Length: " + contentLengthValue);
             }
         }
 
-        // Check for payload - read contentLength chars
+        // Check for payload
         if (contentLength > 0) {
             char[] bodyChars = new char[contentLength];
             int charsRead = bufferedReader.read(bodyChars, 0, bodyChars.length);
@@ -71,7 +105,24 @@ public record Request(Method method, String path, String query, String payload) 
             }
         }
 
-        return new Request(parsedMethod, parsedPath, parsedQuery, parsedPayload);
+        return new Request(parsedMethod, parsedPath, parsedQuery, parsedHeaders, parsedPayload);
+    }
+
+    /**
+     * Retrieves a header value via a case-insensitive key.
+     */
+    public String header(String name) {
+        return headerValue(headers, name);
+    }
+
+    private static String headerValue(Map<String, String> headers, String name) {
+        if (name == null) return null;
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(name)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     /**
