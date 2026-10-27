@@ -1,9 +1,9 @@
 package com.github.mksafe.http;
 
 import org.junit.jupiter.api.Test;
-import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RequestTest {
@@ -14,14 +14,14 @@ class RequestTest {
                      "Host: example.test:8080\r\n" +
                      "Content-Length: 4\r\n\r\n" +
                      "data";
-        Request req = Request.parseRequest(new BufferedReader(new StringReader(raw)));
+        Request req = parse(raw);
 
         assertEquals(Method.POST, req.method());
         assertEquals("/api/users", req.path());
         assertEquals("example.test:8080", req.header("host"));
         assertEquals("2", req.queryParam("page"));
         assertEquals("c#", req.queryParam("tag"));
-        assertEquals("data", req.payload());
+        assertArrayEquals("data".getBytes(StandardCharsets.ISO_8859_1), req.payload());
     }
 
     @Test
@@ -54,11 +54,12 @@ class RequestTest {
 
     @Test
     void parseRequest_ThrowsOnInvalidOrEmptyInput() {
-        assertThrows(IOException.class, () -> Request.parseRequest(new BufferedReader(new StringReader(""))));
-        assertThrows(IOException.class, () -> Request.parseRequest(new BufferedReader(new StringReader("BAD\r\n\r\n"))));
+        assertThrows(IOException.class, () -> parse(""));
+        assertThrows(IOException.class, () -> parse("BAD\r\n\r\n"));
     }
 
     private static Request parse(String raw) throws IOException {
-        return Request.parseRequest(new BufferedReader(new StringReader(raw)));
+        return Request.parseRequest(
+                new ByteArrayInputStream(raw.getBytes(StandardCharsets.ISO_8859_1)));
     }
 }

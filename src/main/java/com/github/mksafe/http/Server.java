@@ -1,8 +1,6 @@
 package com.github.mksafe.http;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -63,11 +61,8 @@ public class Server {
             log.log(System.Logger.Level.DEBUG,
                     "Connection #" + requestNum + " from " + clientSocket.getRemoteSocketAddress());
 
-            // Read and Translate incoming raw HTTP request from the browser to text
-            BufferedReader bufferedReader = new BufferedReader(
-                    new InputStreamReader(clientSocket.getInputStream()));
-
-            Request request = Request.parseRequest(bufferedReader);
+            // Read and parse the incoming raw HTTP request as a byte stream
+            Request request = Request.parseRequest(clientSocket.getInputStream());
 
             log.log(System.Logger.Level.INFO,
                     "Connection #" + requestNum + ": " + request.method() + " " + request.path());

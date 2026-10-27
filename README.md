@@ -27,7 +27,7 @@ public class Main {
 
         // Register functional endpoints
         router.get("/api/health", req -> Response.json(Status.OK, "{\"status\":\"UP\"}", req.method()));
-        router.post("/api/echo", req -> Response.text(Status.CREATED, req.payload(), req.method()));
+        router.post("/api/echo", req -> Response.bytes(Status.CREATED, req.payload(), req.method()));
 
         // Start listening
         Server server = new Server(8080, router);

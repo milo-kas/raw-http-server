@@ -3,6 +3,8 @@ package com.github.mksafe.http;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,11 +17,11 @@ class RouterTest {
         // Runs before every single test to give a fresh Router with test routes
         router = new Router("dummy-public");
         router.post("/api/echo", request -> {
-            String payload = request.payload();
-            if (payload == null || payload.isBlank()) {
+            byte[] payload = request.payload();
+            if (payload == null || new String(payload, StandardCharsets.UTF_8).isBlank()) {
                 return Response.json(Status.BAD_REQUEST, "{\"error\": \"Bad Request\"}\n", request.method());
             }
-            return Response.text(Status.CREATED, payload, request.method());
+            return Response.bytes(Status.CREATED, payload, request.method());
         });
     }
 
@@ -53,7 +55,7 @@ class RouterTest {
     // API TESTS
     @Test
     void handlePost_ApiEcho_WithValidPayload_Returns201() {
-        Request validPost = new Request(Method.POST, "/api/echo", "Hello World");
+        Request validPost = new Request(Method.POST, "/api/echo", "Hello World".getBytes(StandardCharsets.UTF_8));
         Response response = router.handleRequest(validPost);
 
         assertEquals(Status.CREATED, response.getStatus(), "Should return 201 Created");
@@ -64,7 +66,7 @@ class RouterTest {
 
     @Test
     void handlePost_ApiEcho_WithBlankPayload_Returns400_AndJson() {
-        Request badPost = new Request(Method.POST, "/api/echo", "   ");
+        Request badPost = new Request(Method.POST, "/api/echo", "   ".getBytes(StandardCharsets.UTF_8));
         Response response = router.handleRequest(badPost);
 
         assertEquals(Status.BAD_REQUEST, response.getStatus(), "Should return 400 Bad Request");

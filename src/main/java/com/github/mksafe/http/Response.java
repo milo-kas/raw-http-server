@@ -67,6 +67,14 @@ public class Response {
         return new Response(status, ContentType.HTML.getContentType(), bytes, method);
     }
 
+    public static Response bytes(byte[] payload, Method method) {
+        return bytes(Status.OK, payload, method);
+    }
+
+    public static Response bytes(Status status, byte[] payload, Method method) {
+        return new Response(status, ContentType.OCTET_STREAM.getContentType(), payload, method);
+    }
+
     public static Response error(Status status, String message, Method method) {
         String jsonBody = new ApiError(message).toJson();
         return Response.json(status, jsonBody, method);

@@ -1,7 +1,9 @@
 package com.github.mksafe.http;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import java.net.URI;
 import java.net.URLDecoder;
@@ -11,18 +13,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public record Request(
-    Method method, String path, String query, Map<String, String> headers, String payload) {
+    Method method, String path, String query, Map<String, String> headers, byte[] payload) {
 
-    // For every construction, make header immutable
+    private static final int MAX_LINE_SIZE = 8 * 1024;
+
+    // For every construction, make headers and payload immutable
     public Request {
         headers = headers == null ? Map.of() : Map.copyOf(headers);
+        payload = payload != null ? payload.clone() : null;
     }
 
-    public Request(Method method, String path, String query, String payload) {
+    public Request(Method method, String path, String query, byte[] payload) {
         this(method, path, query, Map.of(), payload);
     }
 
-    public Request(Method method, String path, String payload) {
+    public Request(Method method, String path, byte[] payload) {
         this(method, path, null, Map.of(), payload);
     }
 
@@ -30,13 +35,20 @@ public record Request(
         this(method, path, null, Map.of(), null);
     }
 
-    public static Request parseRequest(BufferedReader bufferedReader) throws IOException {
+    @Override
+    public byte[] payload() {
+        return payload != null ? payload.clone() : null;
+    }
+
+    public static Request parseRequest(InputStream inputStream) throws IOException {
+        inputStream = new BufferedInputStream(inputStream);
+
         Method parsedMethod;
         String parsedPath;
-        String parsedPayload = null;
+        byte[] parsedPayload = null;
 
         // Read the request line (first line)
-        String line = bufferedReader.readLine();
+        String line = readLine(inputStream);
         // Abort if the connection drops early or sends an empty line
         if (line == null || line.isBlank()) {
             throw new IOException("Empty Request");
@@ -60,7 +72,7 @@ public record Request(
         Map<String, String> parsedHeaders = new HashMap<>();
 
         // Read HTTP headers until reaching an empty line (end of headers)
-        while ((line = bufferedReader.readLine()) != null) {
+        while ((line = readLine(inputStream)) != null) {
             if (line.isEmpty()) break;
 
             int colon = line.indexOf(':');
@@ -97,15 +109,44 @@ public record Request(
 
         // Check for payload
         if (contentLength > 0) {
-            char[] bodyChars = new char[contentLength];
-            int charsRead = bufferedReader.read(bodyChars, 0, bodyChars.length);
-
-            if (charsRead > 0) {
-                parsedPayload = new String(bodyChars, 0, charsRead);
+            parsedPayload = inputStream.readNBytes(contentLength);
+            if (parsedPayload.length != contentLength) {
+                throw new IOException("Unexpected end of payload: expected "
+                    + contentLength + " bytes, got " + parsedPayload.length);
             }
         }
 
         return new Request(parsedMethod, parsedPath, parsedQuery, parsedHeaders, parsedPayload);
+    }
+
+    /**
+     * Reads a single CRLF-terminated line as bytes; bytes are preserved
+     */
+    private static String readLine(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream line = new ByteArrayOutputStream();
+        int b;
+        int lineLength = 0;
+
+        while ((b = inputStream.read()) != -1 && b != '\n') {
+            if (++lineLength > MAX_LINE_SIZE) {
+                throw new IOException("HTTP line exceeded maximum length of " + MAX_LINE_SIZE + " bytes");
+            }
+            if (b != '\r') {
+                line.write(b);
+            }
+        }
+
+        // Clean EOF before any data arrived
+        if (b == -1 && lineLength == 0) {
+            return null;
+        }
+
+        // Connection closed prematurely
+        if (b == -1) {
+            throw new IOException("Connection closed prematurely before line termination");
+        }
+
+        return line.toString(StandardCharsets.ISO_8859_1);
     }
 
     /**

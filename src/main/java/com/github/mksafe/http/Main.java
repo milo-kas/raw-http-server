@@ -1,5 +1,7 @@
 package com.github.mksafe.http;
 
+import java.nio.charset.StandardCharsets;
+
 public class Main {
     public static void main(String[] args) throws Exception {
         int port = 8080;
@@ -15,11 +17,11 @@ public class Main {
         });
 
         router.post("/api/echo", request -> {
-            String payload = request.payload();
-            if (payload == null || payload.isBlank()) {
+            byte[] payload = request.payload();
+            if (payload == null || new String(payload, StandardCharsets.UTF_8).isBlank()) {
                 return Response.json(Status.BAD_REQUEST, "Bad Request", request.method());
             }
-            return Response.text(Status.CREATED, payload, request.method());
+            return Response.bytes(Status.CREATED, payload, request.method());
         });
 
         Server server = new Server(port, router);
