@@ -116,10 +116,11 @@ class RequestTest {
     }
 
     @Test
-    void parseRequest_RejectsPayloadLargerThanLimit() {
+    void parseRequest_UsesOptionalPayloadLimit() throws IOException {
         String raw = "POST /upload HTTP/1.1\r\nContent-Length: " + (1024 * 1024 + 1) + "\r\n\r\n";
 
         assertThrows(PayloadTooLargeException.class, () -> parse(raw));
+        assertEquals(1024 * 1024 + 1, parse(raw, 2L * 1024 * 1024).body().length());
     }
 
     @Test
@@ -140,6 +141,11 @@ class RequestTest {
 
     private static Request parse(String raw) throws IOException {
         return parse(raw.getBytes(StandardCharsets.ISO_8859_1));
+    }
+
+    private static Request parse(String raw, long maxBodyBytes) throws IOException {
+        return Request.parseRequest(
+                new ByteArrayInputStream(raw.getBytes(StandardCharsets.ISO_8859_1)), maxBodyBytes);
     }
 
     private static Request parse(byte[] raw) throws IOException {

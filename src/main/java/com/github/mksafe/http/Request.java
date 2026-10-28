@@ -17,7 +17,7 @@ public record Request(
     Method method, String path, String query, Map<String, String> headers, RequestBody body) {
 
     private static final int MAX_LINE_SIZE = 8 * 1024;
-    private static final long MAX_BODY_SIZE = 1024L * 1024;
+    static final int DEFAULT_MAX_BODY_BYTES = 1024 * 1024;
 
     public Request {
         headers = headers == null ? Map.of() : Map.copyOf(headers);
@@ -49,13 +49,22 @@ public record Request(
             return null;
         }
         try {
-            return body.bytes(Integer.MAX_VALUE);
+            return body.bytes(DEFAULT_MAX_BODY_BYTES);
+        } catch (PayloadTooLargeException e) {
+            throw new UncheckedIOException(e);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to read request body", e);
         }
     }
 
     public static Request parseRequest(InputStream inputStream) throws IOException {
+        return parseRequest(inputStream, DEFAULT_MAX_BODY_BYTES);
+    }
+
+    public static Request parseRequest(InputStream inputStream, long maxBodyBytes) throws IOException {
+        if (maxBodyBytes < 0) {
+            throw new IllegalArgumentException("maxBodyBytes must be non-negative: " + maxBodyBytes);
+        }
         inputStream = new BufferedInputStream(inputStream);
 
         Method parsedMethod;
@@ -119,9 +128,9 @@ public record Request(
             if (contentLength < 0) {
                 throw new IOException("Negative Content-Length: " + contentLengthValue);
             }
-            if (contentLength > MAX_BODY_SIZE) {
+            if (contentLength > maxBodyBytes) {
                 throw new PayloadTooLargeException("Payload length " + contentLength
-                    + " exceeds limit of " + MAX_BODY_SIZE + " bytes");
+                    + " exceeds limit of " + maxBodyBytes + " bytes");
             }
         }
 

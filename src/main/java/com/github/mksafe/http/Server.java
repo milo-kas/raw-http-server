@@ -13,14 +13,23 @@ public class Server {
 
     private final int port;
     private final Router router;
+    private final long maxBodyBytes;
 
     public Server(Router router) {
         this(8080, router);
     }
 
     public Server(int port, Router router) {
+        this(port, router, Request.DEFAULT_MAX_BODY_BYTES);
+    }
+
+    public Server(int port, Router router, long maxBodyBytes) {
+        if (maxBodyBytes < 0) {
+            throw new IllegalArgumentException("maxBodyBytes must be non-negative: " + maxBodyBytes);
+        }
         this.port = port;
         this.router = router;
+        this.maxBodyBytes = maxBodyBytes;
     }
 
     public Server(int port, String resourcePath) {
@@ -64,7 +73,7 @@ public class Server {
             OutputStream outputStream = clientSocket.getOutputStream();
             Request request;
             try {
-                request = Request.parseRequest(clientSocket.getInputStream());
+                request = Request.parseRequest(clientSocket.getInputStream(), maxBodyBytes);
             } catch (PayloadTooLargeException e) {
                 log.log(System.Logger.Level.WARNING,
                         "Rejected request #" + requestNum + ": " + e.getMessage());
