@@ -13,14 +13,23 @@ public class Server {
 
     private final int port;
     private final Router router;
+    private final long maxBodyBytes;
 
     public Server(Router router) {
         this(8080, router);
     }
 
     public Server(int port, Router router) {
+        this(port, router, Request.DEFAULT_MAX_BODY_BYTES);
+    }
+
+    public Server(int port, Router router, long maxBodyBytes) {
+        if (maxBodyBytes < 0) {
+            throw new IllegalArgumentException("maxBodyBytes must be non-negative: " + maxBodyBytes);
+        }
         this.port = port;
         this.router = router;
+        this.maxBodyBytes = maxBodyBytes;
     }
 
     public Server(int port, String resourcePath) {
@@ -61,13 +70,20 @@ public class Server {
             log.log(System.Logger.Level.DEBUG,
                     "Connection #" + requestNum + " from " + clientSocket.getRemoteSocketAddress());
 
-            // Read and parse the incoming raw HTTP request as a byte stream
-            Request request = Request.parseRequest(clientSocket.getInputStream());
+            OutputStream outputStream = clientSocket.getOutputStream();
+            Request request;
+            try {
+                request = Request.parseRequest(clientSocket.getInputStream(), maxBodyBytes);
+            } catch (PayloadTooLargeException e) {
+                log.log(System.Logger.Level.WARNING,
+                        "Rejected request #" + requestNum + ": " + e.getMessage());
+                Response.error(Status.PAYLOAD_TOO_LARGE,
+                        Status.PAYLOAD_TOO_LARGE.getMessage(), Method.UNKNOWN).respond(outputStream);
+                return;
+            }
 
             log.log(System.Logger.Level.INFO,
                     "Connection #" + requestNum + ": " + request.method() + " " + request.path());
-
-            OutputStream outputStream = clientSocket.getOutputStream();
 
             Response response = router.handleRequest(request);
             response.respond(outputStream);

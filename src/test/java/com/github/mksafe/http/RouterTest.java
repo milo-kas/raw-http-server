@@ -4,8 +4,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RouterTest {
@@ -74,6 +76,22 @@ class RouterTest {
 
         String responseBody = new String(response.getPayload());
         assertEquals("{\"error\": \"Bad Request\"}\n", responseBody, "Should format error as JSON");
+    }
+
+    @Test
+    void handlePost_WithPayloadOverRouteLimit_Returns413WithoutInvokingHandler() {
+        AtomicBoolean invoked = new AtomicBoolean();
+        router.post("/api/small-upload", 4, request -> {
+            invoked.set(true);
+            return Response.text("ok", request.method());
+        });
+
+        Request request = new Request(Method.POST, "/api/small-upload",
+                "12345".getBytes(StandardCharsets.UTF_8));
+        Response response = router.handleRequest(request);
+
+        assertEquals(Status.PAYLOAD_TOO_LARGE, response.getStatus());
+        assertFalse(invoked.get());
     }
 
     @Test

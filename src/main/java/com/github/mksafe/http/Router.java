@@ -1,5 +1,6 @@
 package com.github.mksafe.http;
 
+import java.io.UncheckedIOException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,9 +9,12 @@ public class Router {
 
     private static final System.Logger log = System.getLogger(Router.class.getName());
 
-    private final Map<RouteKey, RouteHandler> routes = new HashMap<>();
+    private final Map<RouteKey, Route> routes = new HashMap<>();
     private final ErrorHandler errorHandler;
     private final StaticHandler staticHandler;
+
+    private record Route(RouteHandler handler, long maxBodyBytes) {
+    }
 
     public Router(ErrorHandler errorHandler, StaticHandler staticHandler) {
         this.errorHandler = errorHandler;
@@ -30,11 +34,22 @@ public class Router {
     }
 
     public void get(String path, RouteHandler handler) {
-        routes.put(new RouteKey(Method.GET, normalisePath(path)), handler);
+        register(Method.GET, path, Request.DEFAULT_MAX_BODY_BYTES, handler);
     }
 
     public void post(String path, RouteHandler handler) {
-        routes.put(new RouteKey(Method.POST, normalisePath(path)), handler);
+        post(path, Request.DEFAULT_MAX_BODY_BYTES, handler);
+    }
+
+    public void post(String path, long maxBodyBytes, RouteHandler handler) {
+        register(Method.POST, path, maxBodyBytes, handler);
+    }
+
+    private void register(Method method, String path, long maxBodyBytes, RouteHandler handler) {
+        if (maxBodyBytes < 0) {
+            throw new IllegalArgumentException("maxBodyBytes must be non-negative: " + maxBodyBytes);
+        }
+        routes.put(new RouteKey(method, normalisePath(path)), new Route(handler, maxBodyBytes));
     }
 
     public Response handleRequest(Request request) {
@@ -45,11 +60,23 @@ public class Router {
         }
 
         RouteKey routeKey = new RouteKey(method, normalisePath(request.path()));
-        RouteHandler handler = routes.get(routeKey);
+        Route route = routes.get(routeKey);
 
-        if (handler != null) {
+        if (route != null) {
+            if (request.body().length() > route.maxBodyBytes()) {
+                return errorHandler.createErrorResponse(Status.PAYLOAD_TOO_LARGE, method, request.path());
+            }
             try {
-                return handler.handle(request);
+                return route.handler().handle(request);
+            } catch (PayloadTooLargeException e) {
+                return errorHandler.createErrorResponse(Status.PAYLOAD_TOO_LARGE, method, request.path());
+            } catch (UncheckedIOException e) {
+                if (e.getCause() instanceof PayloadTooLargeException) {
+                    return errorHandler.createErrorResponse(Status.PAYLOAD_TOO_LARGE, method, request.path());
+                }
+                log.log(System.Logger.Level.ERROR,
+                        "Error executing route handler for " + request.method() + " " + request.path(), e);
+                return errorHandler.createErrorResponse(Status.INTERNAL_SERVER_ERROR, method, request.path());
             } catch (Exception e) {
                 log.log(System.Logger.Level.ERROR,
                         "Error executing route handler for " + request.method() + " " + request.path(), e);
