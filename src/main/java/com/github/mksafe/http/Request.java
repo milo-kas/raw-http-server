@@ -17,6 +17,7 @@ public record Request(
     Method method, String path, String query, Map<String, String> headers, RequestBody body) {
 
     private static final int MAX_LINE_SIZE = 8 * 1024;
+    private static final long MAX_BODY_SIZE = 1024L * 1024;
 
     public Request {
         headers = headers == null ? Map.of() : Map.copyOf(headers);
@@ -59,7 +60,6 @@ public record Request(
 
         Method parsedMethod;
         String parsedPath;
-        byte[] parsedPayload = null;
 
         // Read the request line (first line)
         String line = readLine(inputStream);
@@ -109,28 +109,27 @@ public record Request(
         }
 
         String contentLengthValue = headerValue(parsedHeaders, "content-length");
-        int contentLength = 0;
+        long contentLength = 0;
         if (contentLengthValue != null) {
             try {
-                contentLength = Integer.parseInt(contentLengthValue);
+                contentLength = Long.parseLong(contentLengthValue);
             } catch (NumberFormatException e) {
                 throw new IOException("Invalid Content-Length: " + contentLengthValue, e);
             }
             if (contentLength < 0) {
                 throw new IOException("Negative Content-Length: " + contentLengthValue);
             }
-        }
-
-        // Check for payload
-        if (contentLength > 0) {
-            parsedPayload = inputStream.readNBytes(contentLength);
-            if (parsedPayload.length != contentLength) {
-                throw new IOException("Unexpected end of payload: expected "
-                    + contentLength + " bytes, got " + parsedPayload.length);
+            if (contentLength > MAX_BODY_SIZE) {
+                throw new PayloadTooLargeException("Payload length " + contentLength
+                    + " exceeds limit of " + MAX_BODY_SIZE + " bytes");
             }
         }
 
-        return new Request(parsedMethod, parsedPath, parsedQuery, parsedHeaders, parsedPayload);
+        RequestBody parsedBody = contentLength > 0
+            ? RequestBody.streaming(inputStream, contentLength)
+            : RequestBody.empty();
+
+        return new Request(parsedMethod, parsedPath, parsedQuery, parsedHeaders, parsedBody);
     }
 
     /**

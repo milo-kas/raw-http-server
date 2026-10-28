@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -74,11 +75,51 @@ class RequestTest {
     }
 
     @Test
-    void parseRequest_ThrowsWhenPayloadShorterThanContentLength() {
+    void parseRequest_ReportsTruncatedPayloadWhenRead() throws IOException {
         String raw = "POST /upload HTTP/1.1\r\nContent-Length: 10\r\n\r\nshort";
+        Request req = parse(raw);
 
-        IOException error = assertThrows(IOException.class, () -> parse(raw));
+        IOException error = assertThrows(IOException.class, () -> req.body().bytes(10));
         assertTrue(error.getMessage().contains("Unexpected end of payload"));
+    }
+
+    @Test
+    void parseRequest_DoesNotReadPayloadDuringParsing() throws IOException {
+        byte[] headers = ("POST /upload HTTP/1.1\r\nContent-Length: 4\r\n\r\n")
+                .getBytes(StandardCharsets.US_ASCII);
+        InputStream input = new InputStream() {
+            private int position;
+
+            @Override
+            public int read() {
+                if (position == headers.length) {
+                    throw new AssertionError("Body read during parsing");
+                }
+                return headers[position++] & 0xFF;
+            }
+
+            @Override
+            public int read(byte[] buffer, int offset, int length) {
+                if (position == headers.length) {
+                    throw new AssertionError("Body read during parsing");
+                }
+                int count = Math.min(length, headers.length - position);
+                System.arraycopy(headers, position, buffer, offset, count);
+                position += count;
+                return count;
+            }
+        };
+
+        Request req = Request.parseRequest(input);
+
+        assertEquals(4, req.body().length());
+    }
+
+    @Test
+    void parseRequest_RejectsPayloadLargerThanLimit() {
+        String raw = "POST /upload HTTP/1.1\r\nContent-Length: " + (1024 * 1024 + 1) + "\r\n\r\n";
+
+        assertThrows(PayloadTooLargeException.class, () -> parse(raw));
     }
 
     @Test

@@ -61,13 +61,20 @@ public class Server {
             log.log(System.Logger.Level.DEBUG,
                     "Connection #" + requestNum + " from " + clientSocket.getRemoteSocketAddress());
 
-            // Read and parse the incoming raw HTTP request as a byte stream
-            Request request = Request.parseRequest(clientSocket.getInputStream());
+            OutputStream outputStream = clientSocket.getOutputStream();
+            Request request;
+            try {
+                request = Request.parseRequest(clientSocket.getInputStream());
+            } catch (PayloadTooLargeException e) {
+                log.log(System.Logger.Level.WARNING,
+                        "Rejected request #" + requestNum + ": " + e.getMessage());
+                Response.error(Status.PAYLOAD_TOO_LARGE,
+                        Status.PAYLOAD_TOO_LARGE.getMessage(), Method.UNKNOWN).respond(outputStream);
+                return;
+            }
 
             log.log(System.Logger.Level.INFO,
                     "Connection #" + requestNum + ": " + request.method() + " " + request.path());
-
-            OutputStream outputStream = clientSocket.getOutputStream();
 
             Response response = router.handleRequest(request);
             response.respond(outputStream);
