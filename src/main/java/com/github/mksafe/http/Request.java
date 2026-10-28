@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 
 import java.net.URI;
 import java.net.URLDecoder;
@@ -13,14 +14,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 public record Request(
-    Method method, String path, String query, Map<String, String> headers, byte[] payload) {
+    Method method, String path, String query, Map<String, String> headers, RequestBody body) {
 
     private static final int MAX_LINE_SIZE = 8 * 1024;
 
-    // For every construction, make headers and payload immutable
     public Request {
         headers = headers == null ? Map.of() : Map.copyOf(headers);
-        payload = payload != null ? payload.clone() : null;
+        body = body != null ? body : RequestBody.empty();
+    }
+
+    public Request(Method method, String path, String query, Map<String, String> headers, byte[] payload) {
+        this(method, path, query, headers, toBody(payload));
     }
 
     public Request(Method method, String path, String query, byte[] payload) {
@@ -32,12 +36,22 @@ public record Request(
     }
 
     public Request(Method method, String path) {
-        this(method, path, null, Map.of(), null);
+        this(method, path, null, Map.of(), RequestBody.empty());
     }
 
-    @Override
+    private static RequestBody toBody(byte[] payload) {
+        return payload == null ? RequestBody.empty() : RequestBody.ofBytes(payload);
+    }
+
     public byte[] payload() {
-        return payload != null ? payload.clone() : null;
+        if (body.length() == 0) {
+            return null;
+        }
+        try {
+            return body.bytes(Integer.MAX_VALUE);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to read request body", e);
+        }
     }
 
     public static Request parseRequest(InputStream inputStream) throws IOException {
