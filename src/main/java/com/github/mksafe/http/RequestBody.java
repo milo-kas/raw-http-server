@@ -91,9 +91,11 @@ public final class RequestBody {
                 return -1;
             }
             int read = inputStream.read();
-            if (read != -1) {
-                remaining--;
+            if (read == -1) {
+                throw new EOFException("Unexpected end of payload: "
+                        + remaining + " bytes remaining");
             }
+            remaining--;
             return read;
         }
 
@@ -106,9 +108,11 @@ public final class RequestBody {
                 return -1;
             }
             int read = inputStream.read(buffer, offset, (int) Math.min(length, remaining));
-            if (read > 0) {
-                remaining -= read;
+            if (read == -1) {
+                throw new EOFException("Unexpected end of payload: "
+                        + remaining + " bytes remaining");
             }
+            remaining -= read;
             return read;
         }
 
