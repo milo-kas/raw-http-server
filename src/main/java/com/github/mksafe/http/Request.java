@@ -118,6 +118,16 @@ public record Request(
         }
 
         String contentLengthValue = headerValue(parsedHeaders, "content-length");
+        long contentLength = parseContentLength(maxBodyBytes, contentLengthValue);
+
+        RequestBody parsedBody = contentLength > 0
+            ? RequestBody.streaming(inputStream, contentLength)
+            : RequestBody.empty();
+
+        return new Request(parsedMethod, parsedPath, parsedQuery, parsedHeaders, parsedBody);
+    }
+
+    private static long parseContentLength(long maxBodyBytes, String contentLengthValue) throws IOException {
         long contentLength = 0;
         if (contentLengthValue != null) {
             try {
@@ -133,12 +143,7 @@ public record Request(
                     + " exceeds limit of " + maxBodyBytes + " bytes");
             }
         }
-
-        RequestBody parsedBody = contentLength > 0
-            ? RequestBody.streaming(inputStream, contentLength)
-            : RequestBody.empty();
-
-        return new Request(parsedMethod, parsedPath, parsedQuery, parsedHeaders, parsedBody);
+        return contentLength;
     }
 
     /**
