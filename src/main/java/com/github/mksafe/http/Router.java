@@ -1,7 +1,7 @@
 package com.github.mksafe.http;
 
 import java.io.UncheckedIOException;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -68,6 +68,8 @@ public class Router {
             }
             try {
                 return route.handler().handle(request);
+            } catch (BadRequestException e) {
+                return errorHandler.createErrorResponse(Status.BAD_REQUEST, method, request.path());
             } catch (PayloadTooLargeException e) {
                 return errorHandler.createErrorResponse(Status.PAYLOAD_TOO_LARGE, method, request.path());
             } catch (UncheckedIOException e) {
@@ -91,12 +93,11 @@ public class Router {
         return errorHandler.createErrorResponse(Status.NOT_FOUND, method, request.path());
     }
 
-    private String normalisePath(String path) {
+    private static String normalisePath(String path) {
         if (path == null || path.isBlank()) {
             return "/";
         }
         String normalised = path.startsWith("/") ? path : "/" + path;
-        normalised = Paths.get(normalised).normalize().toString().replace('\\', '/');
-        return normalised;
+        return Path.of(normalised).normalize().toString().replace('\\', '/');
     }
 }

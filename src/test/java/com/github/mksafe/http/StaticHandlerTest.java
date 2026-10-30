@@ -65,6 +65,14 @@ class StaticHandlerTest {
     }
 
     @Test
+    void handleStaticResource_NulPath_Returns400() {
+        Request request = new Request(Method.GET, "/\0", null);
+        Response response = staticHandler.handleStaticResource(request);
+
+        assertEquals(Status.BAD_REQUEST, response.getStatus());
+    }
+
+    @Test
     void handleStaticResource_NonExistentFile_Returns404WithCustomErrorHtml() {
         Request request = new Request(Method.GET, "/non-existent-page.html", null);
         Response response = staticHandler.handleStaticResource(request);

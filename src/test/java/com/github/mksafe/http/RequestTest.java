@@ -42,11 +42,11 @@ class RequestTest {
 
     @Test
     void parseRequest_RejectsInvalidHeaders() {
-        assertThrows(IOException.class, () -> parse("GET / HTTP/1.1\r\nBadHeader\r\n\r\n"));
-        assertThrows(IOException.class, () -> parse(
+        assertThrows(BadRequestException.class, () -> parse("GET / HTTP/1.1\r\nBadHeader\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse(
             "POST / HTTP/1.1\r\nContent-Length: 4\r\ncontent-length: 4\r\n\r\ndata"));
-        assertThrows(IOException.class, () -> parse("POST / HTTP/1.1\r\nContent-Length: nope\r\n\r\n"));
-        assertThrows(IOException.class, () -> parse("POST / HTTP/1.1\r\nContent-Length: -1\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("POST / HTTP/1.1\r\nContent-Length: nope\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("POST / HTTP/1.1\r\nContent-Length: -1\r\n\r\n"));
     }
 
     @Test
@@ -71,7 +71,10 @@ class RequestTest {
     @Test
     void parseRequest_ThrowsOnInvalidOrEmptyInput() {
         assertThrows(IOException.class, () -> parse(""));
-        assertThrows(IOException.class, () -> parse("BAD\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("BAD\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("GET /bad%ZZ HTTP/1.1\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("GET /%00 HTTP/1.1\r\n\r\n"));
     }
 
     @Test

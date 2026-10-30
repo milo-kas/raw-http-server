@@ -163,6 +163,20 @@ class RouterTest {
     }
 
     @Test
+    void handleRequest_HandlerThrowsBadRequest_Returns400() {
+        router.get("/api/bad", req -> {
+            throw new BadRequestException("Invalid input");
+        });
+
+        Request request = new Request(Method.GET, "/api/bad", null);
+        Response response = router.handleRequest(request);
+
+        assertEquals(Status.BAD_REQUEST, response.getStatus());
+        assertEquals("application/json", response.getContentType());
+        assertTrue(new String(response.getPayload()).contains("Bad Request"));
+    }
+
+    @Test
     void handleRequest_HandlerThrowsException_Returns500() {
         router.get("/api/failing", req -> {
             throw new RuntimeException("Simulated crash");

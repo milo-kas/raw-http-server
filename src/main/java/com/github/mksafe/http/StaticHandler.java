@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -33,7 +34,13 @@ public class StaticHandler {
         }
 
         // Flatten any relative path into a canonical destination
-        Path path = Paths.get(fullPath).normalize();
+        Path path;
+        try {
+            path = Paths.get(fullPath).normalize();
+        } catch (InvalidPathException e) {
+            log.log(System.Logger.Level.WARNING, "Invalid static resource path: {0}", request.path());
+            return errorHandler.createErrorResponse(Status.BAD_REQUEST, request.method(), request.path());
+        }
 
         // Get full canonical path as string
         String canonicalPath = path.toString();

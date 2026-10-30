@@ -74,6 +74,12 @@ public class Server {
             Request request;
             try {
                 request = Request.parseRequest(clientSocket.getInputStream(), maxBodyBytes);
+            } catch (BadRequestException e) {
+                log.log(System.Logger.Level.WARNING,
+                        "Rejected request #" + requestNum + ": " + e.getMessage());
+                Response.error(Status.BAD_REQUEST,
+                        Status.BAD_REQUEST.getMessage(), Method.UNKNOWN).respond(outputStream);
+                return;
             } catch (PayloadTooLargeException e) {
                 log.log(System.Logger.Level.WARNING,
                         "Rejected request #" + requestNum + ": " + e.getMessage());

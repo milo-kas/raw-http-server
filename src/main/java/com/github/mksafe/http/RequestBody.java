@@ -36,10 +36,6 @@ public final class RequestBody {
     }
 
     static RequestBody streaming(InputStream stream, long length) {
-        Objects.requireNonNull(stream, "stream must not be null");
-        if (length < 0) {
-            throw new IllegalArgumentException("length must be non-negative: " + length);
-        }
         return new RequestBody(length, new BoundedInputStream(stream, length));
     }
 

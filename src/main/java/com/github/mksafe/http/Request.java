@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -15,6 +16,8 @@ import java.util.Map;
 
 public record Request(
     Method method, String path, String query, Map<String, String> headers, RequestBody body) {
+
+    private static final System.Logger log = System.getLogger(Request.class.getName());
 
     private static final int MAX_LINE_SIZE = 8 * 1024;
     static final int DEFAULT_MAX_BODY_BYTES = 1024 * 1024;
@@ -72,24 +75,34 @@ public record Request(
 
         // Read the request line (first line)
         String line = readLine(inputStream);
-        // Abort if the connection drops early or sends an empty line
+        // Abort if the connection drops early
         if (line == null || line.isBlank()) {
-            throw new IOException("Empty Request");
+            throw new BadRequestException("Empty Request Line");
         }
 
         // Tokenise on whitespace and ensure that the method and path exist
         String[] request = line.split("\\s+");
         if (request.length < 2) {
-            throw new IOException("Invalid Request Line: " + line);
+            throw new BadRequestException("Invalid Request Line: " + line);
         }
 
         parsedMethod = Method.fromString(request[0]);
 
         String rawPath = request[1];
-
+        URI uri;
         // Decode path
-        URI uri = URI.create(rawPath);
-        parsedPath = uri.getPath();
+        try {
+            uri = new URI(rawPath);
+        } catch (URISyntaxException e) {
+            throw new BadRequestException("Invalid path: " + rawPath, e);
+        }
+        parsedPath = uri.normalize().getPath();
+        if (parsedPath == null || parsedPath.isEmpty()) {
+            parsedPath = "/";
+        }
+        if (parsedPath.indexOf('\0') >= 0) {
+            throw new BadRequestException("Invalid path: NUL character not allowed");
+        }
         String parsedQuery = uri.getRawQuery();
 
         Map<String, String> parsedHeaders = new HashMap<>();
@@ -100,18 +113,18 @@ public record Request(
 
             int colon = line.indexOf(':');
             if (colon <= 0) {
-                throw new IOException("Invalid header line: " + line);
+                throw new BadRequestException("Invalid header line: " + line);
             }
 
             String headerName = line.substring(0, colon).trim();
             String headerValue = line.substring(colon + 1).trim();
 
             if (headerName.isEmpty()) {
-                throw new IOException("Invalid header line: " + line);
+                throw new BadRequestException("Invalid header line: " + line);
             }
             if (headerName.equalsIgnoreCase("content-length")
                 && headerValue(parsedHeaders, headerName) != null) {
-                throw new IOException("Duplicate Content-Length");
+                throw new BadRequestException("Duplicate Content-Length");
             }
 
             parsedHeaders.put(headerName, headerValue);
@@ -133,10 +146,10 @@ public record Request(
             try {
                 contentLength = Long.parseLong(contentLengthValue);
             } catch (NumberFormatException e) {
-                throw new IOException("Invalid Content-Length: " + contentLengthValue, e);
+                throw new BadRequestException("Invalid Content-Length: " + contentLengthValue, e);
             }
             if (contentLength < 0) {
-                throw new IOException("Negative Content-Length: " + contentLengthValue);
+                throw new BadRequestException("Negative Content-Length: " + contentLengthValue);
             }
             if (contentLength > maxBodyBytes) {
                 throw new PayloadTooLargeException("Payload length " + contentLength
