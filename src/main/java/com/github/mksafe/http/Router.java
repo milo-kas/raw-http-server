@@ -1,7 +1,6 @@
 package com.github.mksafe.http;
 
 import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,7 +48,7 @@ public class Router {
         if (maxBodyBytes < 0) {
             throw new IllegalArgumentException("maxBodyBytes must be non-negative: " + maxBodyBytes);
         }
-        routes.put(new RouteKey(method, normalisePath(path)), new Route(handler, maxBodyBytes));
+        routes.put(new RouteKey(method, Request.canonicalisePath(path)), new Route(handler, maxBodyBytes));
     }
 
     public Response handleRequest(Request request) {
@@ -59,7 +58,7 @@ public class Router {
             return errorHandler.createErrorResponse(Status.UNKNOWN, method, request.path());
         }
 
-        RouteKey routeKey = new RouteKey(method, normalisePath(request.path()));
+        RouteKey routeKey = new RouteKey(method, request.path());
         Route route = routes.get(routeKey);
 
         if (route != null) {
@@ -91,13 +90,5 @@ public class Router {
         }
 
         return errorHandler.createErrorResponse(Status.NOT_FOUND, method, request.path());
-    }
-
-    private static String normalisePath(String path) {
-        if (path == null || path.isBlank()) {
-            return "/";
-        }
-        String normalised = path.startsWith("/") ? path : "/" + path;
-        return Path.of(normalised).normalize().toString().replace('\\', '/');
     }
 }

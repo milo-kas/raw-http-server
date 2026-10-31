@@ -6,7 +6,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class StaticHandler {
 
@@ -33,13 +32,19 @@ public class StaticHandler {
             fullPath += "index.html";
         }
 
-        // Flatten any relative path into a canonical destination
+        // Dot segments are normalised again to ensure containment and prevent upstream bypasses or parsing bugs
         Path path;
         try {
-            path = Paths.get(fullPath).normalize();
+            path = Path.of(fullPath).normalize();
         } catch (InvalidPathException e) {
             log.log(System.Logger.Level.WARNING, "Invalid static resource path: {0}", request.path());
             return errorHandler.createErrorResponse(Status.BAD_REQUEST, request.method(), request.path());
+        }
+
+        // Check for path traversal; the path is empty or doesn't start with the resource directory
+        if (path.getNameCount() == 0 || !path.getName(0).toString().equals(resourceDir)) {
+            log.log(System.Logger.Level.WARNING, "Path traversal attempt: {0}", request.path());
+            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path()); // 404 for Obscurity
         }
 
         // Get full canonical path as string
@@ -50,12 +55,6 @@ public class StaticHandler {
 
         // Get the content type
         String contentType = parseContentType(canonicalPath);
-
-        // Check for path traversal; the path is empty or doesn't start with the resource directory
-        if (path.getNameCount() == 0 || !path.getName(0).toString().equals(resourceDir)) {
-            log.log(System.Logger.Level.WARNING, "Path traversal attempt: {0}", request.path());
-            return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path()); // 404 for Obscurity
-        }
 
         URL resourceUrl = StaticHandler.class.getResource(canonicalPath);
         if (resourceUrl == null) {

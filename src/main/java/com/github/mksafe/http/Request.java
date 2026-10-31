@@ -10,8 +10,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public record Request(
@@ -25,6 +28,7 @@ public record Request(
     public Request {
         headers = headers == null ? Map.of() : Map.copyOf(headers);
         body = body != null ? body : RequestBody.empty();
+        path = canonicalisePath(path);
     }
 
     public Request(Method method, String path, String query, Map<String, String> headers, byte[] payload) {
@@ -90,19 +94,12 @@ public record Request(
 
         String rawPath = request[1];
         URI uri;
-        // Decode path
         try {
             uri = new URI(rawPath);
         } catch (URISyntaxException e) {
             throw new BadRequestException("Invalid path: " + rawPath, e);
         }
-        parsedPath = uri.normalize().getPath();
-        if (parsedPath == null || parsedPath.isEmpty()) {
-            parsedPath = "/";
-        }
-        if (parsedPath.indexOf('\0') >= 0) {
-            throw new BadRequestException("Invalid path: NUL character not allowed");
-        }
+        parsedPath = parsePath(uri);
         String parsedQuery = uri.getRawQuery();
 
         Map<String, String> parsedHeaders = new HashMap<>();
@@ -138,6 +135,57 @@ public record Request(
             : RequestBody.empty();
 
         return new Request(parsedMethod, parsedPath, parsedQuery, parsedHeaders, parsedBody);
+    }
+
+    static String canonicalisePath(String path) {
+        if (path == null || path.isBlank()) {
+            return "/";
+        }
+
+        String withLeadingSlash = path.startsWith("/") ? path : "/" + path;
+        boolean hasTrailingSlash = withLeadingSlash.length() > 1 && withLeadingSlash.endsWith("/");
+        Deque<String> segments = new ArrayDeque<>();
+
+        for (String segment : withLeadingSlash.split("/", -1)) {
+            if (!segment.isEmpty()) {
+                segments.addLast(segment);
+            }
+        }
+
+        String canonical = "/" + String.join("/", segments);
+        return hasTrailingSlash && !canonical.equals("/") ? canonical + "/" : canonical;
+    }
+
+    private static String parsePath(URI uri) throws BadRequestException {
+        String rawPath = uri.getRawPath();
+        if (rawPath == null || rawPath.isEmpty()) {
+            return "/";
+        }
+
+        String lowerRawPath = rawPath.toLowerCase(Locale.ROOT);
+        if (lowerRawPath.contains("%2f") || lowerRawPath.contains("%5c")) {
+            throw new BadRequestException("Invalid path: encoded separators are not allowed");
+        }
+
+        String path = uri.getPath();
+        if (path == null || path.isEmpty()) {
+            return "/";
+        }
+        if (!path.startsWith("/")) {
+            throw new BadRequestException("Invalid path: path must start with '/'");
+        }
+        if (path.indexOf('\\') >= 0) {
+            throw new BadRequestException("Invalid path: backslashes are not allowed");
+        }
+        if (path.chars().anyMatch(Character::isISOControl)) {
+            throw new BadRequestException("Invalid path: control characters are not allowed");
+        }
+        for (String segment : path.split("/", -1)) {
+            if (segment.equals(".") || segment.equals("..")) {
+                throw new BadRequestException("Invalid path: dot segments are not allowed");
+            }
+        }
+        return path;
     }
 
     private static long parseContentLength(long maxBodyBytes, String contentLengthValue) throws IOException {

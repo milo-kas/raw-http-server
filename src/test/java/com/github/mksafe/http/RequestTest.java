@@ -50,6 +50,12 @@ class RequestTest {
     }
 
     @Test
+    void constructor_CanonicalisesPath() {
+        assertEquals("/api/users", new Request(Method.GET, "api//users", null).path());
+        assertEquals("/api/users/", new Request(Method.GET, "/api/users//", null).path());
+    }
+
+    @Test
     void queryParam_HandlesFlagsAndMissingValues() {
         Request req = new Request(Method.GET, "/test", "active&debug=&empty", null);
 
@@ -75,6 +81,15 @@ class RequestTest {
         assertThrows(BadRequestException.class, () -> parse("\r\n\r\n"));
         assertThrows(BadRequestException.class, () -> parse("GET /bad%ZZ HTTP/1.1\r\n\r\n"));
         assertThrows(BadRequestException.class, () -> parse("GET /%00 HTTP/1.1\r\n\r\n"));
+    }
+
+    @Test
+    void parseRequest_RejectsUnsafePaths() {
+        assertThrows(BadRequestException.class, () -> parse("GET /../ HTTP/1.1\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("GET /api/../ HTTP/1.1\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("GET /%2e%2e/ HTTP/1.1\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("GET /api/%2e%2e/api/users HTTP/1.1\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse("GET /api%2Fusers HTTP/1.1\r\n\r\n"));
     }
 
     @Test
