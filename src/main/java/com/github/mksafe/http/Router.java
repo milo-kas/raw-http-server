@@ -48,7 +48,8 @@ public class Router {
         if (maxBodyBytes < 0) {
             throw new IllegalArgumentException("maxBodyBytes must be non-negative: " + maxBodyBytes);
         }
-        routes.put(new RouteKey(method, Request.canonicalisePath(path)), new Route(handler, maxBodyBytes));
+        String normalisedPath = normalisePath(Request.canonicalisePath(path));
+        routes.put(new RouteKey(method, normalisedPath), new Route(handler, maxBodyBytes));
     }
 
     public Response handleRequest(Request request) {
@@ -58,7 +59,7 @@ public class Router {
             return errorHandler.createErrorResponse(Status.UNKNOWN, method, request.path());
         }
 
-        RouteKey routeKey = new RouteKey(method, request.path());
+        RouteKey routeKey = new RouteKey(method, normalisePath(request.path()));
         Route route = routes.get(routeKey);
 
         if (route != null) {
@@ -90,5 +91,17 @@ public class Router {
         }
 
         return errorHandler.createErrorResponse(Status.NOT_FOUND, method, request.path());
+    }
+
+    /**
+     * Normalises route paths for unified path convention.
+     * Removes trailing slashes and preserves root path "/".
+     */
+    private static String normalisePath(String path) {
+        int len = path.length();
+        while (len > 1 && (path.charAt(len - 1) == '/')) {
+            len--;
+        }
+        return path.substring(0, len);
     }
 }

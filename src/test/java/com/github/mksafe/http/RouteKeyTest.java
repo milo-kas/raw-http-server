@@ -24,8 +24,8 @@ class RouteKeyTest {
 
         assertNotEquals(key1, keyDifferentMethod);
         assertNotEquals(key1, keyDifferentPath);
-        assertNotEquals(key1, null);
-        assertNotEquals(key1, new Object());
+        assertNotEquals(null, key1);
+        assertNotEquals(new Object(), key1);
     }
 
     @Test

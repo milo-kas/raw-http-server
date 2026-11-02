@@ -163,6 +163,22 @@ class RouterTest {
     }
 
     @Test
+    void handleRequest_PathNormalisation_IgnoresTrailingSlashes() {
+        router.get("/api/no-trailing-slash", req -> Response.text("Matched", req.method()));
+        router.get("/api/with-trailing-slash/", req -> Response.text("Matched", req.method()));
+
+        Response requestWithSlash = router.handleRequest(
+                new Request(Method.GET, "/api/no-trailing-slash/", null));
+        Response requestWithoutSlash = router.handleRequest(
+                new Request(Method.GET, "/api/with-trailing-slash", null));
+
+        assertEquals(Status.OK, requestWithSlash.getStatus());
+        assertEquals("Matched", new String(requestWithSlash.getPayload()));
+        assertEquals(Status.OK, requestWithoutSlash.getStatus());
+        assertEquals("Matched", new String(requestWithoutSlash.getPayload()));
+    }
+
+    @Test
     void handleRequest_HandlerThrowsBadRequest_Returns400() {
         router.get("/api/bad", req -> {
             throw new BadRequestException("Invalid input");
