@@ -73,6 +73,16 @@ class StaticHandlerTest {
     }
 
     @Test
+    void handleStaticResource_Directory_Returns404WithCustomErrorHtml() {
+        Request request = new Request(Method.GET, "/error", null);
+        Response response = staticHandler.handleStaticResource(request);
+
+        assertEquals(Status.NOT_FOUND, response.getStatus());
+        assertEquals("text/html", response.getContentType());
+        assertTrue(new String(response.getPayload()).contains("404 Error"));
+    }
+
+    @Test
     void handleStaticResource_NonExistentFile_Returns404WithCustomErrorHtml() {
         Request request = new Request(Method.GET, "/non-existent-page.html", null);
         Response response = staticHandler.handleStaticResource(request);

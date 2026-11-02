@@ -2,10 +2,14 @@ package com.github.mksafe.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.JarURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.util.jar.JarEntry;
 
 public class StaticHandler {
 
@@ -64,6 +68,13 @@ public class StaticHandler {
 
         try {
             URLConnection connection = resourceUrl.openConnection();
+
+            // Reject resources that are directories
+            if (isDirectory(resourceUrl, connection)) {
+                log.log(System.Logger.Level.DEBUG, "Target resource is a directory, rejecting: {0}", canonicalPath);
+                return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path());
+            }
+
             long contentLength = connection.getContentLengthLong();
             InputStream inputStream = connection.getInputStream();
             return new Response(Status.OK, contentType, inputStream, contentLength, request.method());
@@ -88,5 +99,24 @@ public class StaticHandler {
         }
 
         return ContentType.OCTET_STREAM.getContentType();
+    }
+
+    private static boolean isDirectory(URL url, URLConnection connection) throws IOException {
+        // Local filesystem check
+        if ("file".equalsIgnoreCase(url.getProtocol())) {
+            try {
+                return Files.isDirectory(Path.of(url.toURI()));
+            } catch (URISyntaxException | IllegalArgumentException e) {
+                throw new IOException("Invalid file resource URL: " + url, e);
+            }
+        }
+
+        // Packaged JAR check
+        if (connection instanceof JarURLConnection jarConnection) {
+            JarEntry entry = jarConnection.getJarEntry();
+            return entry != null && entry.isDirectory();
+        }
+
+        return url.getPath().endsWith("/");
     }
 }
