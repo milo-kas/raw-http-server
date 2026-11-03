@@ -142,6 +142,32 @@ class RequestTest {
     }
 
     @Test
+    void parseRequest_EnforcesHeaderCountLimit() throws IOException {
+        assertEquals(Request.MAX_HEADER_COUNT,
+                parse(requestWithHeaderCount(Request.MAX_HEADER_COUNT)).headers().size());
+
+        assertThrows(RequestHeaderFieldsTooLargeException.class,
+                () -> parse(requestWithHeaderCount(Request.MAX_HEADER_COUNT + 1)));
+    }
+
+    @Test
+    void parseRequest_EnforcesHeaderSizeLimit() throws IOException {
+        String prefix = "X-A: ";
+        int bytesPerHeader = Request.MAX_HEADER_BYTES / 2;
+        String value = "a".repeat(bytesPerHeader - prefix.length() - 2);
+
+        String accepted = "GET / HTTP/1.1\r\n"
+                + "X-A: " + value + "\r\n"
+                + "X-B: " + value + "\r\n\r\n";
+        assertEquals(value.length(), parse(accepted).header("x-a").length());
+
+        String rejected = "GET / HTTP/1.1\r\n"
+                + "X-A: " + value + "a\r\n"
+                + "X-B: " + value + "\r\n\r\n";
+        assertThrows(RequestHeaderFieldsTooLargeException.class, () -> parse(rejected));
+    }
+
+    @Test
     void parseRequest_EnforcesMaximumLineLengthBoundary() throws IOException {
         String prefix = "X-Long: ";
         int maxLineSize = 8 * 1024;
@@ -155,6 +181,14 @@ class RequestTest {
         String rejected = "GET / HTTP/1.1\r\n"
                 + prefix + "a".repeat(maxLineSize - prefix.length()) + "\r\n\r\n";
         assertThrows(IOException.class, () -> parse(rejected));
+    }
+
+    private static String requestWithHeaderCount(int count) {
+        StringBuilder raw = new StringBuilder("GET / HTTP/1.1\r\n");
+        for (int i = 0; i < count; i++) {
+            raw.append("X-").append(i).append(": a\r\n");
+        }
+        return raw.append("\r\n").toString();
     }
 
     private static Request parse(String raw) throws IOException {

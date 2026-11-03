@@ -86,6 +86,12 @@ public class Server {
                 Response.error(Status.PAYLOAD_TOO_LARGE,
                         Status.PAYLOAD_TOO_LARGE.getMessage(), Method.UNKNOWN).respond(outputStream);
                 return;
+            } catch (RequestHeaderFieldsTooLargeException e) {
+                log.log(System.Logger.Level.WARNING,
+                        "Rejected request #" + requestNum + ": " + e.getMessage());
+                Response.error(Status.REQUEST_HEADER_FIELDS_TOO_LARGE,
+                        Status.REQUEST_HEADER_FIELDS_TOO_LARGE.getMessage(), Method.UNKNOWN).respond(outputStream);
+                return;
             }
 
             log.log(System.Logger.Level.INFO,

@@ -23,6 +23,8 @@ public record Request(
     private static final System.Logger log = System.getLogger(Request.class.getName());
 
     private static final int MAX_LINE_SIZE = 8 * 1024;
+    static final int MAX_HEADER_COUNT = 100;
+    static final int MAX_HEADER_BYTES = 16 * 1024;
     static final int DEFAULT_MAX_BODY_BYTES = 1024 * 1024;
 
     public Request {
@@ -103,10 +105,22 @@ public record Request(
         String parsedQuery = uri.getRawQuery();
 
         Map<String, String> parsedHeaders = new HashMap<>();
+        int headerCount = 0;
+        int headerBytes = 0;
 
         // Read HTTP headers until reaching an empty line (end of headers)
         while ((line = readLine(inputStream)) != null) {
             if (line.isEmpty()) break;
+
+            if (++headerCount > MAX_HEADER_COUNT) {
+                throw new RequestHeaderFieldsTooLargeException(
+                    "Header count exceeds limit of " + MAX_HEADER_COUNT);
+            }
+            headerBytes += line.length() + 2;
+            if (headerBytes > MAX_HEADER_BYTES) {
+                throw new RequestHeaderFieldsTooLargeException(
+                    "Header size exceeds limit of " + MAX_HEADER_BYTES + " bytes");
+            }
 
             int colon = line.indexOf(':');
             if (colon <= 0) {
