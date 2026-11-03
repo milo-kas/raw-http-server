@@ -38,6 +38,32 @@ class StaticHandlerTest {
     }
 
     @Test
+    void handleStaticResource_ExtensionlessPath_ResolvesToHtml() {
+        Request request = new Request(Method.GET, "/index", null);
+        Response response = staticHandler.handleStaticResource(request);
+
+        assertEquals(Status.OK, response.getStatus());
+        assertEquals("text/html", response.getContentType());
+        assertTrue(new String(response.getPayload()).contains("HELLO WORLD!"));
+    }
+
+    @Test
+    void handleStaticResource_ExtensionlessPath_Returns404WhenMissing() {
+        Request request = new Request(Method.GET, "/missing", null);
+        Response response = staticHandler.handleStaticResource(request);
+
+        assertEquals(Status.NOT_FOUND, response.getStatus());
+    }
+
+    @Test
+    void handleStaticResource_ExtensionedPath_DoesNotFallbackToHtml() {
+        Request request = new Request(Method.GET, "/missing.css", null);
+        Response response = staticHandler.handleStaticResource(request);
+
+        assertEquals(Status.NOT_FOUND, response.getStatus());
+    }
+
+    @Test
     void handleStaticResource_BinaryFile_ReturnsCorrectContentType() {
         Request request = new Request(Method.GET, "/favicon.ico", null);
         Response response = staticHandler.handleStaticResource(request);

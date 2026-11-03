@@ -57,14 +57,21 @@ public class StaticHandler {
         // Account for windows dir formatting
         canonicalPath = canonicalPath.replace('\\', '/');
 
-        // Get the content type
-        String contentType = parseContentType(canonicalPath);
-
         URL resourceUrl = StaticHandler.class.getResource(canonicalPath);
+
+        // Pretty URLs (`/index` -> `/index.html`)
+        if (resourceUrl == null && !hasExtension(canonicalPath)) {
+            canonicalPath += ".html";
+            resourceUrl = StaticHandler.class.getResource(canonicalPath);
+        }
+
         if (resourceUrl == null) {
             log.log(System.Logger.Level.DEBUG, "Resource not found: {0}", canonicalPath);
             return errorHandler.createErrorResponse(Status.NOT_FOUND, request.method(), request.path());
         }
+
+        // Get the content type from the resolved path
+        String contentType = parseContentType(canonicalPath);
 
         try {
             URLConnection connection = resourceUrl.openConnection();
@@ -118,5 +125,9 @@ public class StaticHandler {
         }
 
         return url.getPath().endsWith("/");
+    }
+
+    private static boolean hasExtension(String path) {
+        return path.lastIndexOf('.') > path.lastIndexOf('/');
     }
 }
