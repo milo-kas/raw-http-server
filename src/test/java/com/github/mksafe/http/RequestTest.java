@@ -50,6 +50,14 @@ class RequestTest {
     }
 
     @Test
+    void parseRequest_RejectsTransferEncoding() {
+        assertThrows(BadRequestException.class, () -> parse(
+            "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse(
+            "POST / HTTP/1.1\r\ntransfer-encoding: chunked\r\nContent-Length: 4\r\n\r\ndata"));
+    }
+
+    @Test
     void constructor_CanonicalisesPath() {
         assertEquals("/api/users", new Request(Method.GET, "api//users", null).path());
         assertEquals("/api/users/", new Request(Method.GET, "/api/users//", null).path());

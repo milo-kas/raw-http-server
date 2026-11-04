@@ -141,6 +141,10 @@ public record Request(
             parsedHeaders.put(headerName, headerValue);
         }
 
+        if (headerValue(parsedHeaders, "transfer-encoding") != null) {
+            throw new BadRequestException("Transfer-Encoding is not supported");
+        }
+
         String contentLengthValue = headerValue(parsedHeaders, "content-length");
         long contentLength = parseContentLength(maxBodyBytes, contentLengthValue);
 
