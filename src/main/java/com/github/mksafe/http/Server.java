@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
 
     private static final System.Logger log = System.getLogger(Server.class.getName());
+
+    private static final int READ_TIMEOUT_MILLIS = 30_000;
 
     private final int port;
     private final Router router;
@@ -67,6 +70,7 @@ public class Server {
 
     private void handleClient(Socket clientSocket, int requestNum, Router router) {
         try (clientSocket) {
+            clientSocket.setSoTimeout(READ_TIMEOUT_MILLIS);
             log.log(System.Logger.Level.DEBUG,
                     "Connection #" + requestNum + " from " + clientSocket.getRemoteSocketAddress());
 
@@ -94,12 +98,18 @@ public class Server {
                 return;
             }
 
-            log.log(System.Logger.Level.INFO,
-                    "Connection #" + requestNum + ": " + request.method() + " " + request.path());
-
             Response response = router.handleRequest(request);
             response.respond(outputStream);
 
+            log.log(System.Logger.Level.INFO,
+                    "Connection #" + requestNum + ": " + request.method() + " " + request.path()
+                            + " -> " + response.getStatus().getCode() + " "
+                            + response.getStatus().getMessage());
+
+        } catch (SocketTimeoutException e) {
+            log.log(System.Logger.Level.WARNING,
+                    "Connection #" + requestNum + " from "
+                            + clientSocket.getRemoteSocketAddress() + " timed out");
         } catch (Exception e) {
             log.log(System.Logger.Level.ERROR, "Error handling request #" + requestNum, e);
         }
