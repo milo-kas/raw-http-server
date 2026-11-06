@@ -209,6 +209,9 @@ public record Request(
     private static long parseContentLength(long maxBodyBytes, String contentLengthValue) throws IOException {
         long contentLength = 0;
         if (contentLengthValue != null) {
+            if (contentLengthValue.chars().anyMatch(c -> c < '0' || c > '9')) {
+                throw new BadRequestException("Invalid Content-Length: " + contentLengthValue);
+            }
             try {
                 contentLength = Long.parseLong(contentLengthValue);
             } catch (NumberFormatException e) {

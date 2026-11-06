@@ -58,6 +58,16 @@ class RequestTest {
     }
 
     @Test
+    void parseRequest_RejectsNonDigitContentLength() {
+        assertThrows(BadRequestException.class, () -> parse(
+            "POST / HTTP/1.1\r\nContent-Length: +4\r\n\r\ndata"));
+        assertThrows(BadRequestException.class, () -> parse(
+            "POST / HTTP/1.1\r\nContent-Length: -0\r\n\r\n"));
+        assertThrows(BadRequestException.class, () -> parse(
+            "POST / HTTP/1.1\r\nContent-Length: 4.0\r\n\r\ndata"));
+    }
+
+    @Test
     void constructor_CanonicalisesPath() {
         assertEquals("/api/users", new Request(Method.GET, "api//users", null).path());
         assertEquals("/api/users/", new Request(Method.GET, "/api/users//", null).path());
