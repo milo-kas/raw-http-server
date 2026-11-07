@@ -15,9 +15,11 @@ public class Main {
         Router router = new Router(resourceDir);
         router.get("/api/users", req -> {
             String page = req.queryParam("page");
-            String limit = req.queryParam("limit");
+            if (page == null || !page.matches("\\d+")) {
+                page = "1";
+            }
 
-            String responseBody = "{\"page\":" + (page != null ? page : "1") + "}";
+            String responseBody = "{\"page\":" + page + "}";
             return Response.json(Status.OK, responseBody, req.method());
         });
 
