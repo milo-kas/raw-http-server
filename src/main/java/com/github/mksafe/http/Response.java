@@ -1,5 +1,6 @@
 package com.github.mksafe.http;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -104,10 +105,12 @@ public class Response {
         // Stream payload if requested and method is not HEAD
         if (!Method.HEAD.equals(method)) {
             if (cachedPayload != null) {
-                outputStream.write(cachedPayload);
+                try (InputStream stream = new ByteArrayInputStream(cachedPayload)) {
+                    transfer(stream, outputStream, contentLength);
+                }
             } else if (payload != null) {
                 try (InputStream stream = payload) {
-                    stream.transferTo(outputStream);
+                    transfer(stream, outputStream, contentLength);
                 }
             }
         } else if (payload != null) {
@@ -116,6 +119,26 @@ public class Response {
 
         // Flush buffered bytes to be written to underlying socket
         outputStream.flush();
+    }
+
+    // Writes exactly contentLength bytes, or the whole stream when the length is unknown
+    private static void transfer(InputStream input, OutputStream output, long contentLength)
+            throws IOException {
+        if (contentLength < 0) {
+            input.transferTo(output);
+            return;
+        }
+
+        byte[] buffer = new byte[8192];
+        long remaining = contentLength;
+        while (remaining > 0) {
+            int read = input.read(buffer, 0, (int) Math.min(buffer.length, remaining));
+            if (read == -1) {
+                throw new IOException("Response body ended before Content-Length");
+            }
+            output.write(buffer, 0, read);
+            remaining -= read;
+        }
     }
 
     // CRLF helper

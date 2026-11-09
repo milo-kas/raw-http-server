@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ResponseTest {
@@ -169,6 +170,41 @@ class ResponseTest {
 
         String result = outputStream.toString(StandardCharsets.UTF_8);
         assertFalse(result.contains("Content-Length:"));
+    }
+
+    @Test
+    void respond_WithContentLengthZero_DoesNotWriteStreamBody() throws IOException {
+        Response response = new Response(Status.OK, "text/plain",
+                new ByteArrayInputStream("SMUGGLED".getBytes(StandardCharsets.US_ASCII)), 0, Method.GET);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        response.respond(outputStream);
+
+        String result = outputStream.toString(StandardCharsets.US_ASCII);
+        assertTrue(result.contains("Content-Length: 0\r\n"));
+        assertTrue(result.endsWith("\r\n\r\n"));
+        assertFalse(result.contains("SMUGGLED"));
+    }
+
+    @Test
+    void respond_WithContentLengthShorterThanStream_WritesOnlyDeclaredBytes() throws IOException {
+        Response response = new Response(Status.OK, "text/plain",
+                new ByteArrayInputStream("1234567890".getBytes(StandardCharsets.US_ASCII)), 4, Method.GET);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        response.respond(outputStream);
+
+        String result = outputStream.toString(StandardCharsets.US_ASCII);
+        assertTrue(result.contains("Content-Length: 4\r\n"));
+        assertTrue(result.endsWith("\r\n\r\n1234"));
+    }
+
+    @Test
+    void respond_WithContentLengthLongerThanStream_Throws() {
+        Response response = new Response(Status.OK, "text/plain",
+                new ByteArrayInputStream("1234".getBytes(StandardCharsets.US_ASCII)), 10, Method.GET);
+
+        assertThrows(IOException.class, () -> response.respond(new ByteArrayOutputStream()));
     }
 
     @Test
